@@ -1,29 +1,110 @@
+2024-02-25 14:19:24 | ERROR | No users found
+2024-02-25 14:19:24 | ERROR | Traceback (most recent call last):
+  File "C:\Dev\Universidad\clipclass3.0\backend\services\users-ms\api\services\UserService.py", line 24, in get_all_users
+    raise EmptyDbException("No users found", 204)
+api.utils.AppExceptions.EmptyDbException: No users found
 
+2024-02-25 14:19:24 | ERROR | 'NoneType' object is not iterable
+2024-02-25 14:19:24 | ERROR | Traceback (most recent call last):
+  File "C:\Dev\Universidad\clipclass3.0\backend\services\users-ms\api\routes\Users.py", line 21, in get_all_users
+    for user in users_list:
+TypeError: 'NoneType' object is not iterable
 
-2024-02-25 13:05:03 | ERROR | invalid literal for int() with base 10: 'a'
-2024-02-25 13:05:03 | ERROR | Traceback (most recent call last):
-  File "C:\Dev\Universidad\clipclass3.0\backend\services\users-ms\api\routes\Users.py", line 35, in get_user_by_id
-    user_id = int(user_id)
-              ^^^^^^^^^^^^
-ValueError: invalid literal for int() with base 10: 'a'
+2024-02-25 16:09:28 | ERROR | int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+2024-02-25 16:09:28 | ERROR | Traceback (most recent call last):
+  File "C:\Dev\Universidad\clipclass3.0\backend\services\users-ms\api\services\AuthService.py", line 26, in login_user
+    group=int(row[1]),
+          ^^^^^^^^^^^
+TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
 
-2024-02-25 13:06:20 | ERROR | invalid literal for int() with base 10: 'a'
-2024-02-25 13:06:20 | ERROR | Traceback (most recent call last):
-  File "C:\Dev\Universidad\clipclass3.0\backend\services\users-ms\api\routes\Users.py", line 35, in get_user_by_id
-    user_id = int(user_id)
-              ^^^^^^^^^^^^
-ValueError: invalid literal for int() with base 10: 'a'
+2024-02-25 16:10:10 | ERROR | int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+2024-02-25 16:10:10 | ERROR | Traceback (most recent call last):
+  File "C:\Dev\Universidad\clipclass3.0\backend\services\users-ms\api\services\AuthService.py", line 26, in login_user
+    group=int(row[1]),
+          ^^^^^^^^^^^
+TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
 
-2024-02-25 13:08:12 | ERROR | invalid literal for int() with base 10: 'a'
-2024-02-25 13:08:12 | ERROR | Traceback (most recent call last):
-  File "C:\Dev\Universidad\clipclass3.0\backend\services\users-ms\api\routes\Users.py", line 35, in get_user_by_id
-    user_id = int(user_id)
-              ^^^^^^^^^^^^
-ValueError: invalid literal for int() with base 10: 'a'
+2024-02-25 16:11:07 | ERROR | int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+2024-02-25 16:11:07 | ERROR | Traceback (most recent call last):
+  File "C:\Dev\Universidad\clipclass3.0\backend\services\users-ms\api\services\AuthService.py", line 27, in login_user
+    group=int(row[1]),
+          ^^^^^^^^^^^
+TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
 
-2024-02-25 13:13:53 | ERROR | ('User not found', <HTTPStatus.NOT_FOUND: 404>)
-2024-02-25 13:13:53 | ERROR | Traceback (most recent call last):
-  File "C:\Dev\Universidad\clipclass3.0\backend\services\users-ms\api\routes\Users.py", line 41, in get_user_by_id
-    raise Exception('User not found', HTTPStatus.NOT_FOUND)
-Exception: ('User not found', <HTTPStatus.NOT_FOUND: 404>)
+2024-02-25 16:11:46 | ERROR | int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+2024-02-25 16:11:46 | ERROR | Traceback (most recent call last):
+  File "C:\Dev\Universidad\clipclass3.0\backend\services\users-ms\api\services\AuthService.py", line 27, in login_user
+    group=int(row[1]),
+          ^^^^^^^^^^^
+TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+
+2024-02-25 16:12:05 | ERROR | int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+2024-02-25 16:12:05 | ERROR | Traceback (most recent call last):
+  File "C:\Dev\Universidad\clipclass3.0\backend\services\users-ms\api\services\AuthService.py", line 27, in login_user
+    group=int(row[1]),
+          ^^^^^^^^^^^
+TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+
+2024-02-25 16:12:19 | ERROR | int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+2024-02-25 16:12:19 | ERROR | Traceback (most recent call last):
+  File "C:\Dev\Universidad\clipclass3.0\backend\services\users-ms\api\services\AuthService.py", line 27, in login_user
+    group=int(row[1]),
+          ^^^^^^^^^^^
+TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+
+2024-02-25 16:12:23 | ERROR | int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+2024-02-25 16:12:23 | ERROR | Traceback (most recent call last):
+  File "C:\Dev\Universidad\clipclass3.0\backend\services\users-ms\api\services\AuthService.py", line 27, in login_user
+    group=int(row[1]),
+          ^^^^^^^^^^^
+TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+
+2024-02-25 16:12:37 | ERROR | int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+2024-02-25 16:12:37 | ERROR | Traceback (most recent call last):
+  File "C:\Dev\Universidad\clipclass3.0\backend\services\users-ms\api\services\AuthService.py", line 28, in login_user
+    group=int(row[1]),
+          ^^^^^^^^^^^
+TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+
+2024-02-25 16:12:49 | ERROR | int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+2024-02-25 16:12:49 | ERROR | Traceback (most recent call last):
+  File "C:\Dev\Universidad\clipclass3.0\backend\services\users-ms\api\services\AuthService.py", line 28, in login_user
+    group=int(row[1]),
+          ^^^^^^^^^^^
+TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+
+2024-02-25 16:13:18 | ERROR | int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+2024-02-25 16:13:18 | ERROR | Traceback (most recent call last):
+  File "C:\Dev\Universidad\clipclass3.0\backend\services\users-ms\api\services\AuthService.py", line 28, in login_user
+    group=int(row[1]),
+          ^^^^^^^^^^^
+TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+
+2024-02-25 16:13:20 | ERROR | int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+2024-02-25 16:13:20 | ERROR | Traceback (most recent call last):
+  File "C:\Dev\Universidad\clipclass3.0\backend\services\users-ms\api\services\AuthService.py", line 28, in login_user
+    group=int(row[1]),
+          ^^^^^^^^^^^
+TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+
+2024-02-25 16:13:31 | ERROR | int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+2024-02-25 16:13:31 | ERROR | Traceback (most recent call last):
+  File "C:\Dev\Universidad\clipclass3.0\backend\services\users-ms\api\services\AuthService.py", line 28, in login_user
+    group=int(row[1]),
+          ^^^^^^^^^^^
+TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+
+2024-02-25 16:13:33 | ERROR | int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+2024-02-25 16:13:33 | ERROR | Traceback (most recent call last):
+  File "C:\Dev\Universidad\clipclass3.0\backend\services\users-ms\api\services\AuthService.py", line 28, in login_user
+    group=int(row[1]),
+          ^^^^^^^^^^^
+TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+
+2024-02-25 16:13:45 | ERROR | int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+2024-02-25 16:13:45 | ERROR | Traceback (most recent call last):
+  File "C:\Dev\Universidad\clipclass3.0\backend\services\users-ms\api\services\AuthService.py", line 28, in login_user
+    group=int(row[1]),
+          ^^^^^^^^^^^
+TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
 

@@ -1,0 +1,138 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "description": "",
+    "version": "1.0.0",
+    "title": "Clipclass Users Microservice"
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "paths": {
+    "/auth": {
+      "post": {
+        "tags": [
+          "Login"
+        ],
+        "summary": "",
+        "requestBody": {
+          "description": "",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/loginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/users": {
+      "post": {
+        "tags": [
+          "CRUD operations"
+        ],
+        "summary": "Create new user",
+        "responses": {
+
+        }
+      },
+      "get": {
+        "tags": [
+          "CRUD operations"
+        ],
+        "summary": "Get all users",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/users/{id}":{
+      "get": {
+        "tags": [
+          "CRUD operations"
+        ],
+        "summary": "Get single user by id",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "CRUD operations"
+        ],
+        "summary": "Edit a user",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "CRUD operations"
+        ],
+        "summary": "Delete a user",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "loginRequest": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "required": true
+          },
+          "password": {
+            "type": "string"
+          }
+        }
+      },
+      "userRequest":{
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "group": {
+            "type": "integer"
+          },
+          "password": {
+            "type": "string"
+          },
+          "surname": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "image": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

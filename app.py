@@ -8,11 +8,5 @@ from config import config
 configuration = config['development']
 app = init_app(configuration)
 
-
-@app.route("/")
-def home():
-    return "Corriendo Contenedor users-ms"
-
-
 if __name__ == "__main__":
     app.run(port=8080)

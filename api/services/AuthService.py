@@ -22,8 +22,8 @@ class AuthService:
                 row = cursor_dbusers.fetchone()
                 if row is not None:
                     authenticated_user = User(
-                        idUser=int(row[0]),
-                        group=int(row[1]),
+                        idUser=row[0],
+                        group=row[1],
                         username=row[2],
                         password=row[3],
                         name=row[4],

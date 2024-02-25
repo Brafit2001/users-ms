@@ -3,3 +3,4 @@ requests
 PyMySQL
 mariadb
 decouple
+flask-swagger-ui

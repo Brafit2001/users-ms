@@ -25,6 +25,7 @@ def login():
         )
 
         authenticated_user = AuthService.login_user(_user)
+        print(authenticated_user)
         if authenticated_user is not None:
             return jsonify({'success': True, 'data': {'user': authenticated_user.username}})
         else:

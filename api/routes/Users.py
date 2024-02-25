@@ -1,28 +1,31 @@
 import traceback
 from http import HTTPStatus
 
+import mariadb
+from flasgger import swag_from
 from flask import Blueprint, jsonify, request
 
 from api.models.UserModel import User
 from api.services.UserService import UserService
+from api.utils.AppExceptions import EmptyDbException, NotFoundException
 from api.utils.Logger import Logger
 
 users = Blueprint('users_blueprint', __name__)
 
 
+@swag_from("users.yml", methods=['GET'])
 @users.route('/', methods=['GET'])
 def get_all_users():
     try:
         users_list = UserService.get_all_users()
-        if users_list is not None:
-            response_users = []
-            for user in users_list:
-                response_users.append(user.to_json())
-            return jsonify({'success': True, 'data': response_users})
-        else:
-            response = jsonify({'message': 'User db is empty', 'success': False})
-            return response, HTTPStatus.NOT_FOUND
-
+        response_users = []
+        for user in users_list:
+            response_users.append(user.to_json())
+        response = jsonify({'success': True, 'data': response_users})
+        return response, HTTPStatus.OK
+    except EmptyDbException as ex:
+        response = jsonify({'success': False, 'message': ex.message})
+        return response, ex.error_code
     except Exception as ex:
         Logger.add_to_log("error", str(ex))
         Logger.add_to_log("error", traceback.format_exc())
@@ -63,6 +66,8 @@ def add_user():
         )
         response = UserService.add_user(_user)
         return response, HTTPStatus.OK
+    except mariadb.IntegrityError:
+        return jsonify({'message': 'Username is already taken', 'success': False}), HTTPStatus.BAD_REQUEST
     except Exception as ex:
         Logger.add_to_log("error", str(ex))
         Logger.add_to_log("error", traceback.format_exc())
@@ -72,9 +77,14 @@ def add_user():
 @users.route('/<user_id>', methods=['DELETE'])
 def delete_user(user_id):
     try:
+
         response = UserService.delete_user(user_id)
         return response, HTTPStatus.OK
+    except NotFoundException as ex:
+        response = jsonify({'success': False, 'message': ex.message})
+        return response, ex.error_code
     except Exception as ex:
+
         Logger.add_to_log("error", str(ex))
         Logger.add_to_log("error", traceback.format_exc())
         return jsonify({'message': str(ex), 'success': False})
@@ -95,6 +105,9 @@ def edit_user(user_id):
         )
         response = UserService.update_user(_user)
         return response, HTTPStatus.OK
+    except NotFoundException as ex:
+        response = jsonify({'success': False, 'message': ex.message})
+        return response, ex.error_code
     except Exception as ex:
         Logger.add_to_log("error", str(ex))
         Logger.add_to_log("error", traceback.format_exc())
