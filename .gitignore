@@ -8,4 +8,4 @@ __pycache__/
 
 .idea
 
-app.log
+api/utils/log
