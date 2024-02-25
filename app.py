@@ -1,7 +1,3 @@
-import requests
-import os
-from flask import Flask, jsonify
-
 from api import init_app
 from config import config
 

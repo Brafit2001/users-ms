@@ -4,3 +4,4 @@ PyMySQL
 mariadb
 decouple
 flask-swagger-ui
+flasgger
