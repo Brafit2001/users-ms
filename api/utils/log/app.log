@@ -1,0 +1,29 @@
+
+
+2024-02-25 13:05:03 | ERROR | invalid literal for int() with base 10: 'a'
+2024-02-25 13:05:03 | ERROR | Traceback (most recent call last):
+  File "C:\Dev\Universidad\clipclass3.0\backend\services\users-ms\api\routes\Users.py", line 35, in get_user_by_id
+    user_id = int(user_id)
+              ^^^^^^^^^^^^
+ValueError: invalid literal for int() with base 10: 'a'
+
+2024-02-25 13:06:20 | ERROR | invalid literal for int() with base 10: 'a'
+2024-02-25 13:06:20 | ERROR | Traceback (most recent call last):
+  File "C:\Dev\Universidad\clipclass3.0\backend\services\users-ms\api\routes\Users.py", line 35, in get_user_by_id
+    user_id = int(user_id)
+              ^^^^^^^^^^^^
+ValueError: invalid literal for int() with base 10: 'a'
+
+2024-02-25 13:08:12 | ERROR | invalid literal for int() with base 10: 'a'
+2024-02-25 13:08:12 | ERROR | Traceback (most recent call last):
+  File "C:\Dev\Universidad\clipclass3.0\backend\services\users-ms\api\routes\Users.py", line 35, in get_user_by_id
+    user_id = int(user_id)
+              ^^^^^^^^^^^^
+ValueError: invalid literal for int() with base 10: 'a'
+
+2024-02-25 13:13:53 | ERROR | ('User not found', <HTTPStatus.NOT_FOUND: 404>)
+2024-02-25 13:13:53 | ERROR | Traceback (most recent call last):
+  File "C:\Dev\Universidad\clipclass3.0\backend\services\users-ms\api\routes\Users.py", line 41, in get_user_by_id
+    raise Exception('User not found', HTTPStatus.NOT_FOUND)
+Exception: ('User not found', <HTTPStatus.NOT_FOUND: 404>)
+
