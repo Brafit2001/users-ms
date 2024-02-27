@@ -44,8 +44,33 @@ class UserService:
                 row = cursor_dbusers.fetchone()
                 if row is not None:
                     user = to_user(row)
+                else:
+                    raise NotFoundException("User not found")
             connection_dbusers.close()
             return user
+        except NotFoundException:
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+
+    @classmethod
+    def get_user_by_username(cls, username: str) -> User:
+        try:
+            connection_dbusers = get_connection('dbusers')
+            user = None
+            with connection_dbusers.cursor() as cursor_dbusers:
+                query = "select * from users where username = '{}'".format(username)
+                cursor_dbusers.execute(query)
+                row = cursor_dbusers.fetchone()
+                if row is not None:
+                    user = to_user(row)
+                else:
+                    raise NotFoundException("User not found")
+            connection_dbusers.close()
+            return user
+        except NotFoundException:
+            raise
         except Exception as ex:
             Logger.add_to_log("error", str(ex))
             Logger.add_to_log("error", traceback.format_exc())
@@ -68,6 +93,7 @@ class UserService:
             connection_dbusers.close()
             return 'User added'
         except mariadb.IntegrityError:
+            # User already exists
             raise
         except Exception as ex:
             Logger.add_to_log("error", str(ex))
@@ -76,9 +102,8 @@ class UserService:
     @classmethod
     def delete_user(cls, userId: int):
         try:
-            userExist = cls.get_user_by_id(userId)
-            if userExist is None:
-                raise NotFoundException("User not Found")
+            # Check if user exists
+            cls.get_user_by_id(userId)
             connection_dbusers = get_connection('dbusers')
             with (connection_dbusers.cursor()) as cursor_dbusers:
                 query = "delete from users where id = '{}'".format(userId)
@@ -94,9 +119,8 @@ class UserService:
     @classmethod
     def update_user(cls, user: User):
         try:
-            userExist = cls.get_user_by_id(user.id)
-            if userExist is None:
-                raise NotFoundException("User not Found")
+            # Check if user exists
+            cls.get_user_by_id(user.id)
             connection_dbusers = get_connection('dbusers')
             with (connection_dbusers.cursor()) as cursor_dbusers:
                 query = ("update users set username = '{}',password = '{}', name = '{}' ,surname = '{}', email = '{}' "

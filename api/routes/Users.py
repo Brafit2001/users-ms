@@ -1,6 +1,7 @@
+import random
+import string
 import traceback
 from http import HTTPStatus
-
 import mariadb
 from flasgger import swag_from
 from flask import Blueprint, jsonify, request
@@ -9,12 +10,14 @@ from api.models.UserModel import User
 from api.services.UserService import UserService
 from api.utils.AppExceptions import EmptyDbException, NotFoundException
 from api.utils.Logger import Logger
+from api.utils.Security import Security
 
 users = Blueprint('users_blueprint', __name__)
 
 
-@swag_from("users.yml", methods=['GET'])
+# @swag_from("users.yml", methods=['GET'])
 @users.route('/', methods=['GET'])
+@Security.authenticate
 def get_all_users():
     try:
         users_list = UserService.get_all_users()
@@ -37,12 +40,11 @@ def get_user_by_id(user_id: int):
     try:
         user_id = int(user_id)
         user = UserService.get_user_by_id(user_id)
-        if user is not None:
-            return user.to_json(), HTTPStatus.OK
-        else:
-            response = jsonify({'message': 'User not found', 'success': False})
-            return response, HTTPStatus.NOT_FOUND
+        return user.to_json(), HTTPStatus.OK
 
+    except NotFoundException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
     except ValueError:
         return jsonify({'message': "User id must be an integer", 'success': False})
     except Exception as ex:
@@ -54,20 +56,18 @@ def get_user_by_id(user_id: int):
 @users.route('/', methods=['POST'])
 def add_user():
     try:
-        _user = User(
-            idUser=0,
-            group=None,
-            username=request.json["username"],
-            password=request.json["password"],
-            name=request.json["name"],
-            surname=request.json["surname"],
-            email=request.json["email"],
-            image=None
-        )
+
+        password = ''.join(random.choices(string.ascii_lowercase + string.ascii_uppercase +
+                                          string.digits, k=6))
+        _user = User(idUser=0, group=None, username=request.json["username"], password=password,
+                     name=request.json["name"], surname=request.json["surname"], email=request.json["email"],
+                     image=None)
+
         response = UserService.add_user(_user)
         return response, HTTPStatus.OK
     except mariadb.IntegrityError:
-        return jsonify({'message': 'Username is already taken', 'success': False}), HTTPStatus.BAD_REQUEST
+        response = jsonify({'message': 'Username is already taken', 'success': False})
+        return response, HTTPStatus.BAD_REQUEST
     except Exception as ex:
         Logger.add_to_log("error", str(ex))
         Logger.add_to_log("error", traceback.format_exc())

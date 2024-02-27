@@ -108,3 +108,45 @@ TypeError: int() argument must be a string, a bytes-like object or a real number
           ^^^^^^^^^^^
 TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
 
+2024-02-25 20:55:27 | ERROR | 'NoneType' object has no attribute 'to_json'
+2024-02-25 20:55:27 | ERROR | Traceback (most recent call last):
+  File "C:\Dev\Universidad\clipclass3.0\backend\services\users-ms\api\routes\Users.py", line 42, in get_user_by_id
+    return user.to_json(), HTTPStatus.OK
+           ^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'to_json'
+
+2024-02-27 20:30:15 | ERROR | 'User' object has no attribute 'fullname'
+2024-02-27 20:30:15 | ERROR | Traceback (most recent call last):
+  File "C:\Dev\Universidad\clipclass3.0\backend\services\users-ms\api\utils\Security.py", line 28, in generate_token
+    'fullname': authenticated_user.fullname,
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'User' object has no attribute 'fullname'. Did you mean: 'surname'?
+
+2024-02-27 20:31:47 | ERROR | 'User' object has no attribute 'fullname'
+2024-02-27 20:31:47 | ERROR | Traceback (most recent call last):
+  File "C:\Dev\Universidad\clipclass3.0\backend\services\users-ms\api\utils\Security.py", line 29, in generate_token
+    'fullname': authenticated_user.fullname,
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'User' object has no attribute 'fullname'. Did you mean: 'surname'?
+
+2024-02-27 21:03:01 | ERROR | 'NoneType' object has no attribute 'cursor'
+2024-02-27 21:03:01 | ERROR | Traceback (most recent call last):
+  File "C:\Dev\Universidad\clipclass3.0\backend\services\users-ms\api\services\AuthService.py", line 18, in login_user
+    with (connection_dbusers.cursor() as cursor_dbusers):
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'cursor'
+
+2024-02-27 21:03:34 | ERROR | 'NoneType' object has no attribute 'cursor'
+2024-02-27 21:03:34 | ERROR | Traceback (most recent call last):
+  File "C:\Dev\Universidad\clipclass3.0\backend\services\users-ms\api\services\AuthService.py", line 18, in login_user
+    with (connection_dbusers.cursor() as cursor_dbusers):
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'cursor'
+
+2024-02-27 21:04:12 | ERROR | 'NoneType' object has no attribute 'cursor'
+2024-02-27 21:04:12 | ERROR | Traceback (most recent call last):
+  File "C:\Dev\Universidad\clipclass3.0\backend\services\users-ms\api\services\AuthService.py", line 18, in login_user
+    with (connection_dbusers.cursor() as cursor_dbusers):
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'cursor'
+

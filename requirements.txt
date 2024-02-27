@@ -2,6 +2,8 @@ Flask
 requests
 PyMySQL
 mariadb
-decouple
 flask-swagger-ui
 flasgger
+PyJWT
+pytz
+python-decouple

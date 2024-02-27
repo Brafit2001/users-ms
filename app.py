@@ -1,7 +1,7 @@
 from api import init_app
-from config import config
+from config import my_config
 
-configuration = config['development']
+configuration = my_config['development']
 app = init_app(configuration)
 
 if __name__ == "__main__":
