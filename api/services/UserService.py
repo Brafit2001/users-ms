@@ -23,7 +23,7 @@ class UserService:
                 if not resultset:
                     raise EmptyDbException("No users found")
                 for row in resultset:
-                    user = to_user_data(row)
+                    user = row_to_user_data(row)
                     users_list.append(user)
             connection_dbusers.close()
             return users_list
@@ -43,7 +43,7 @@ class UserService:
                 cursor_dbusers.execute(query)
                 row = cursor_dbusers.fetchone()
                 if row is not None:
-                    user = to_user(row)
+                    user = row_to_user(row)
                 else:
                     raise NotFoundException("User not found")
             connection_dbusers.close()
@@ -64,7 +64,7 @@ class UserService:
                 cursor_dbusers.execute(query)
                 row = cursor_dbusers.fetchone()
                 if row is not None:
-                    user = to_user(row)
+                    user = row_to_user(row)
                 else:
                     raise NotFoundException("User not found")
             connection_dbusers.close()
@@ -143,7 +143,7 @@ class UserService:
             Logger.add_to_log("error", traceback.format_exc())
 
 
-def to_user_data(row) -> UserData:
+def row_to_user_data(row) -> UserData:
     return UserData(
         idUser=row[0],
         group=row[1],
@@ -155,7 +155,7 @@ def to_user_data(row) -> UserData:
     )
 
 
-def to_user(row) -> User:
+def row_to_user(row) -> User:
     return User(
         idUser=row[0],
         group=row[1],

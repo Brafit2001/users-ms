@@ -2,6 +2,7 @@ import traceback
 
 # Database
 from api.database.db import get_connection
+from api.models.PermissionModel import Permission, PermissionType
 # Logger
 from api.utils.Logger import Logger
 # Models
@@ -36,3 +37,30 @@ class AuthService:
         except Exception as ex:
             Logger.add_to_log("error", str(ex))
             Logger.add_to_log("error", traceback.format_exc())
+
+    @classmethod
+    def get_permissions(cls, idUser):
+        try:
+            connection_dbusers = get_connection('dbusers')
+            permissions_list = []
+            with (connection_dbusers.cursor() as cursor_dbusers):
+                query = ("SELECT permission, permission_type "
+                         "FROM relationusersroles a INNER JOIN relationrolespermissions b ON a.role = b.role "
+                         "WHERE a.`user` = '{}'").format(idUser)
+                cursor_dbusers.execute(query)
+                result_set = cursor_dbusers.fetchall()
+                for row in result_set:
+                    permission = row_to_permission(row)
+                    permissions_list.append(permission.to_tuple())
+            connection_dbusers.close()
+            return permissions_list
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+
+
+def row_to_permission(row):
+    return Permission(
+        idPermission=row[0],
+        permission_type=PermissionType(row[1])
+    )

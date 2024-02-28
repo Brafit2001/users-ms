@@ -9,3 +9,4 @@ __pycache__/
 .idea
 
 api/utils/log
+api/utils/log/app.log

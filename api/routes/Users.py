@@ -6,6 +6,7 @@ import mariadb
 from flasgger import swag_from
 from flask import Blueprint, jsonify, request
 
+from api.models.PermissionModel import PermissionName, PermissionType
 from api.models.UserModel import User
 from api.services.UserService import UserService
 from api.utils.AppExceptions import EmptyDbException, NotFoundException
@@ -18,6 +19,7 @@ users = Blueprint('users_blueprint', __name__)
 # @swag_from("users.yml", methods=['GET'])
 @users.route('/', methods=['GET'])
 @Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.VERIFY, PermissionType.READ)])
 def get_all_users():
     try:
         users_list = UserService.get_all_users()
@@ -36,6 +38,7 @@ def get_all_users():
 
 
 @users.route('/<user_id>', methods=['GET'])
+@Security.authenticate
 def get_user_by_id(user_id: int):
     try:
         user_id = int(user_id)
@@ -54,6 +57,7 @@ def get_user_by_id(user_id: int):
 
 
 @users.route('/', methods=['POST'])
+@Security.authenticate
 def add_user():
     try:
 
@@ -75,6 +79,7 @@ def add_user():
 
 
 @users.route('/<user_id>', methods=['DELETE'])
+@Security.authenticate
 def delete_user(user_id):
     try:
 
@@ -91,6 +96,7 @@ def delete_user(user_id):
 
 
 @users.route('/<user_id>', methods=['PUT'])
+@Security.authenticate
 def edit_user(user_id):
     try:
         _user = User(
