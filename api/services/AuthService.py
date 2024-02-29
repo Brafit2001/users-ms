@@ -1,5 +1,5 @@
 import traceback
-
+from werkzeug.security import check_password_hash, generate_password_hash
 # Database
 from api.database.db import get_connection
 from api.models.PermissionModel import Permission, PermissionType
@@ -17,10 +17,13 @@ class AuthService:
             connection_dbusers = get_connection('dbusers')
             authenticated_user = None
             with (connection_dbusers.cursor() as cursor_dbusers):
-                query = "select * from users where username = '{}' and password = '{}'".format(
-                    user.username, user.password)
+                query = "select * from users where username = '{}'".format(
+                    user.username)
                 cursor_dbusers.execute(query)
                 row = cursor_dbusers.fetchone()
+                check_password = check_password_hash(pwhash=row[3], password=user.password)
+                if check_password is False:
+                    return authenticated_user
                 if row is not None:
                     authenticated_user = User(
                         idUser=row[0],

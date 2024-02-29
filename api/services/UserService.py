@@ -1,4 +1,5 @@
 import traceback
+from werkzeug.security import check_password_hash, generate_password_hash
 from http import HTTPStatus
 
 import mariadb
@@ -80,10 +81,11 @@ class UserService:
         try:
             connection_dbusers = get_connection('dbusers')
             with (connection_dbusers.cursor()) as cursor_dbusers:
+                print(user.password)
                 query = ("insert into users set username = '{}',password = '{}', name = '{}' ,surname = '{}', "
                          "email = '{}'").format(
                     user.username,
-                    user.password,
+                    generate_password_hash(user.password),
                     user.name,
                     user.surname,
                     user.email
@@ -138,6 +140,21 @@ class UserService:
             return f'User {user.id} updated'
         except NotFoundException:
             raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+
+    @classmethod
+    def send_password_email(cls, user):
+        try:
+            pass
+            '''
+            email_sender =             email_sender = 'no.reply.clipclass@gmail.com'
+            credential = app.config['EMAIL_PASSWORD']
+            email_receiver = email
+            credential = app.config['EMAIL_PASSWORD']
+            email_receiver = email
+            '''
         except Exception as ex:
             Logger.add_to_log("error", str(ex))
             Logger.add_to_log("error", traceback.format_exc())

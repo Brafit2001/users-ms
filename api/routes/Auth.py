@@ -4,6 +4,7 @@ from api.models.UserModel import User
 from api.services.AuthService import AuthService
 from api.utils.Security import Security
 
+
 auth = Blueprint('auth_blueprint', __name__)
 
 

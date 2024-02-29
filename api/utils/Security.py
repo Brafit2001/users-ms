@@ -14,26 +14,45 @@ from api.utils.Logger import Logger
 
 
 class Security:
-
     secret = config('SECRET_KEY')
     tz = pytz.timezone("Europe/Madrid")
     expiration_time = 300
 
     @classmethod
-    def authenticate(cls, f):
-        @wraps(f)
-        def decorated_function(*args, **kwargs):
-            # TODO ("Meter try: and except:)
-            if not cls.verify_token(request.headers):
-                response = jsonify({'error': 'Invalid token'})
-                return response, HTTPStatus.UNAUTHORIZED
+    def authenticate(cls, func):
+        """
+        Método para autenticar al usuario. Llama a la función de validación del token
 
-            return f(*args, **kwargs)
+        :return
+            - 'OK' : payload del token
+            - 'error' : return error
+        """
+        @wraps(func)
+        def decorated_function(*args, **kwargs):
+            try:
+                payload = cls.verify_token(request.headers)
+                return func(payload, *args, **kwargs)
+            except KeyError:
+                response = jsonify({'error': 'Authorization header not found'})
+                return response, HTTPStatus.UNAUTHORIZED
+            except (jwt.ExpiredSignatureError, jwt.InvalidSignatureError, jwt.exceptions.DecodeError) as ex:
+                response = jsonify({'error': 'Token error - ' + str(ex)})
+                return response, HTTPStatus.UNAUTHORIZED
+            except IndexError:
+                response = jsonify({'error': 'Bad token format'})
+                return response, HTTPStatus.UNAUTHORIZED
 
         return decorated_function
 
     @classmethod
     def generate_token(cls, authenticated_user):
+        """
+        Se genera un token de autenticación con los datos del usuario.
+
+            :param authenticated_user: Datos del usuario.
+            :return:
+                - 'OK':Devuelve el token generado
+        """
         try:
             payload = {
                 'iat': datetime.datetime.now(tz=cls.tz),
@@ -49,34 +68,52 @@ class Security:
 
     @classmethod
     def verify_token(cls, headers):
+        """
+        Verifica el token de autenticación.
+        :param headers: Encabezados de la petición.
+        :return
+            - 'OK':payload del token
+        :raise: error
+        """
         try:
-
-            if 'Authorization' in headers.keys():
-                authorization = headers['Authorization']
-                encoded_token = authorization.split(" ")[1]
-                if (len(encoded_token) > 0) and (encoded_token.count('.') == 2):
-
-                    try:
-                        payload = jwt.decode(encoded_token, cls.secret, algorithms=["HS256"])
-                        # TODO (Retornar errores en caso del fallo del token)
-                        return True
-                    except (jwt.ExpiredSignatureError, jwt.InvalidSignatureError) as ex:
-                        return False
-
-            return False
+            authorization = headers['Authorization']
+            encoded_token = authorization.split(" ")[1]
+            payload = jwt.decode(encoded_token, cls.secret, algorithms=["HS256"])
+            return payload
+        except IndexError:
+            '''Bad token format'''
+            raise
+        except KeyError:
+            '''Authorization header missing'''
+            raise
+        except jwt.InvalidSignatureError:
+            '''Invalid signature'''
+            raise
+        except jwt.exceptions.DecodeError:
+            '''Not enough segments'''
+            raise
+        except jwt.ExpiredSignatureError:
+            "Token has expired"
+            raise
         except Exception as ex:
             Logger.add_to_log("error", str(ex))
             Logger.add_to_log("error", traceback.format_exc())
 
     @classmethod
     def authorize(cls, permissions_required: list):
+        """
+        Método para validar los permisos del usuario. Necesita que el usuario esté autenticado ya que obtiene
+        el id del usuario a partir del payload obtenido en el método authenticate()
+
+        :param permissions_required: lista de permisos requeridos
+        :return
+            - error: si el usuario no tiene permisos
+        """
         def decorator(func):
             @wraps(func)
             def wrapper(*args, **kwargs):
                 try:
-                    authorization = request.headers['Authorization']
-                    encoded_token = authorization.split(" ")[1]
-                    payload = jwt.decode(encoded_token, cls.secret, algorithms=["HS256"])
+                    payload = args[0]
                     idUser = payload['idUser']
                     permissions_list = AuthService.get_permissions(idUser)
                     for pr in permissions_required:
@@ -86,6 +123,10 @@ class Security:
                 except NotAuthorized as ex:
                     response = jsonify({'success': False, 'message': ex.message})
                     return response, ex.error_code
-            return wrapper
-        return decorator
+                except Exception as ex:
+                    Logger.add_to_log("error", str(ex))
+                    Logger.add_to_log("error", traceback.format_exc())
 
+            return wrapper
+
+        return decorator
