@@ -33,13 +33,13 @@ class Security:
                 payload = cls.verify_token(request.headers)
                 return func(payload, *args, **kwargs)
             except KeyError:
-                response = jsonify({'error': 'Authorization header not found'})
+                response = jsonify({'error': 'Authorization header not found', 'success': False})
                 return response, HTTPStatus.UNAUTHORIZED
             except (jwt.ExpiredSignatureError, jwt.InvalidSignatureError, jwt.exceptions.DecodeError) as ex:
-                response = jsonify({'error': 'Token error - ' + str(ex)})
+                response = jsonify({'error': 'Token error - ' + str(ex), 'success': False})
                 return response, HTTPStatus.UNAUTHORIZED
             except IndexError:
-                response = jsonify({'error': 'Bad token format'})
+                response = jsonify({'error': 'Bad token format', 'success': False})
                 return response, HTTPStatus.UNAUTHORIZED
 
         return decorated_function
@@ -119,7 +119,7 @@ class Security:
                     for pr in permissions_required:
                         if pr not in permissions_list:
                             raise NotAuthorized('The user does not have the appropriate permissions')
-                    return func(*args, **kwargs)
+                    return func()
                 except NotAuthorized as ex:
                     response = jsonify({'success': False, 'message': ex.message})
                     return response, ex.error_code
