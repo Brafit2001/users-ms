@@ -4,6 +4,7 @@ from functools import wraps
 from http import HTTPStatus
 
 import jwt
+import mariadb
 import pytz
 from decouple import config
 from flask import request, jsonify, abort
@@ -41,6 +42,10 @@ class Security:
             except IndexError:
                 response = jsonify({'error': 'Bad token format', 'success': False})
                 return response, HTTPStatus.UNAUTHORIZED
+            except Exception as ex:
+                Logger.add_to_log("error", str(ex))
+                Logger.add_to_log("error", traceback.format_exc())
+                raise
 
         return decorated_function
 
@@ -59,12 +64,12 @@ class Security:
                 'exp': datetime.datetime.now(tz=cls.tz) + datetime.timedelta(minutes=cls.expiration_time),
                 'idUser': authenticated_user.id,
                 'username': authenticated_user.username,
-                'roles': []
             }
             return jwt.encode(payload, cls.secret, algorithm="HS256")
         except Exception as ex:
             Logger.add_to_log("error", str(ex))
             Logger.add_to_log("error", traceback.format_exc())
+            raise
 
     @classmethod
     def verify_token(cls, headers):
@@ -98,6 +103,7 @@ class Security:
         except Exception as ex:
             Logger.add_to_log("error", str(ex))
             Logger.add_to_log("error", traceback.format_exc())
+            raise
 
     @classmethod
     def authorize(cls, permissions_required: list):
@@ -119,14 +125,18 @@ class Security:
                     for pr in permissions_required:
                         if pr not in permissions_list:
                             raise NotAuthorized('The user does not have the appropriate permissions')
-                    return func()
+                    return func(**kwargs)
                 except NotAuthorized as ex:
                     response = jsonify({'success': False, 'message': ex.message})
                     return response, ex.error_code
+                except mariadb.OperationalError as ex:
+                    response = jsonify({'success': False, 'message': str(ex)})
+                    return response, HTTPStatus.SERVICE_UNAVAILABLE
                 except Exception as ex:
                     Logger.add_to_log("error", str(ex))
                     Logger.add_to_log("error", traceback.format_exc())
-
+                    response = jsonify({'success': False, 'message': str(ex)})
+                    return response, HTTPStatus.INTERNAL_SERVER_ERROR
             return wrapper
 
         return decorator

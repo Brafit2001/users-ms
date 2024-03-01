@@ -16,9 +16,10 @@ def init_app(config):
     # Swagger
     # app.register_blueprint(SWAGGERUI_BLUEPRINT, url_prefix=SWAGGER_URL)
 
-    # Blueprints
-    from api.routes import Auth, Users, Health
+    # ----- BLUEPRINTS --------
+    from api.routes import Auth, Users, Health, Roles
     app.register_blueprint(Auth.auth, url_prefix='/auth')
     app.register_blueprint(Users.users, url_prefix='/users')
+    app.register_blueprint(Roles.roles, url_prefix='/roles')
     app.register_blueprint(Health.health, url_prefix='/health')
     return app

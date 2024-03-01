@@ -1,5 +1,9 @@
+import traceback
+
 import mariadb
 from decouple import config
+
+from api.utils.Logger import Logger
 
 
 def get_connection(database):
@@ -12,4 +16,6 @@ def get_connection(database):
             database=database
         )
     except Exception as ex:
-        print(ex)
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        raise

@@ -5,6 +5,7 @@ from http import HTTPStatus
 import mariadb
 
 from api.database.db import get_connection
+from api.models.PermissionModel import Permission, PermissionType
 from api.models.UserModel import User, UserData
 from api.utils.AppExceptions import EmptyDbException, NotFoundException
 from api.utils.Logger import Logger
@@ -20,14 +21,17 @@ class UserService:
             with (connection_dbusers.cursor()) as cursor_dbusers:
                 query = "select * from users"
                 cursor_dbusers.execute(query)
-                resultset = cursor_dbusers.fetchall()
-                if not resultset:
+                result_set = cursor_dbusers.fetchall()
+                if not result_set:
                     raise EmptyDbException("No users found")
-                for row in resultset:
+                for row in result_set:
                     user = row_to_user_data(row)
                     users_list.append(user)
             connection_dbusers.close()
             return users_list
+        except mariadb.OperationalError:
+            "Me meto aqui"
+            raise
         except EmptyDbException:
             raise
         except Exception as ex:
@@ -159,6 +163,47 @@ class UserService:
             Logger.add_to_log("error", str(ex))
             Logger.add_to_log("error", traceback.format_exc())
 
+    @classmethod
+    def get_user_role(cls, userId: int):
+        try:
+            connection_dbusers = get_connection('dbusers')
+            with (connection_dbusers.cursor()) as cursor_dbusers:
+                query = "select * from relationusersroles where user = '{}'".format(userId)
+                cursor_dbusers.execute(query)
+                row = cursor_dbusers.fetchone()
+                if row is not None:
+                    roleId = row[1]
+                else:
+                    raise NotFoundException("No roles found")
+            connection_dbusers.close()
+            return roleId
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+
+    @classmethod
+    def get_user_permissions(cls, userId: int):
+        try:
+            connection_dbusers = get_connection('dbusers')
+            user_role = cls.get_user_role(userId)
+            permissions_list = []
+            with (connection_dbusers.cursor()) as cursor_dbusers:
+                query = "select * from relationrolespermissions where role = '{}'".format(user_role)
+                cursor_dbusers.execute(query)
+                result_set = cursor_dbusers.fetchall()
+                if not result_set:
+                    raise EmptyDbException("No permissions found")
+                for row in result_set:
+                    permission = row_to_permission(row)
+                    permissions_list.append(permission.to_tuple())
+            connection_dbusers.close()
+            return permissions_list
+        except EmptyDbException:
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+
 
 def row_to_user_data(row) -> UserData:
     return UserData(
@@ -182,4 +227,12 @@ def row_to_user(row) -> User:
         surname=row[5],
         email=row[6],
         image=row[7]
+    )
+
+
+def row_to_permission(row) -> Permission:
+    print(row)
+    return Permission(
+        idPermission=row[1],
+        permission_type=PermissionType(row[2])
     )

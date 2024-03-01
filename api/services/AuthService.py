@@ -40,6 +40,7 @@ class AuthService:
         except Exception as ex:
             Logger.add_to_log("error", str(ex))
             Logger.add_to_log("error", traceback.format_exc())
+            raise
 
     @classmethod
     def get_permissions(cls, idUser):
@@ -60,6 +61,7 @@ class AuthService:
         except Exception as ex:
             Logger.add_to_log("error", str(ex))
             Logger.add_to_log("error", traceback.format_exc())
+            raise
 
 
 def row_to_permission(row):

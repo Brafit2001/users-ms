@@ -1,7 +1,9 @@
+import traceback
 from http import HTTPStatus
 from flask import request, jsonify, Blueprint
 from api.models.UserModel import User
 from api.services.AuthService import AuthService
+from api.utils.Logger import Logger
 from api.utils.Security import Security
 
 
@@ -27,7 +29,10 @@ def login():
             response = jsonify({'message': 'Incorrect username or password'})
             return response, HTTPStatus.UNAUTHORIZED
     except Exception as ex:
-        return jsonify({'message': str(ex), 'success': False})
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 @auth.route('/logout', methods=['POST'])
