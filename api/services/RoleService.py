@@ -69,6 +69,7 @@ class RoleService:
         except Exception as ex:
             Logger.add_to_log("error", str(ex))
             Logger.add_to_log("error", traceback.format_exc())
+            raise
 
     @classmethod
     def delete_role(cls, roleId: int):
@@ -105,6 +106,25 @@ class RoleService:
         except Exception as ex:
             Logger.add_to_log("error", str(ex))
             Logger.add_to_log("error", traceback.format_exc())
+
+    @classmethod
+    def assign_role(cls, userId: int, roleId: int):
+        try:
+            connection_dbusers = get_connection('dbusers')
+            with (connection_dbusers.cursor()) as cursor_dbusers:
+                query = "insert into relationusersroles set user = '{}', role = '{}'".format(userId, roleId)
+                cursor_dbusers.execute(query)
+                connection_dbusers.commit()
+            connection_dbusers.close()
+            return 'Role added to User'
+        except mariadb.IntegrityError:
+            # User has already the role
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            raise
+
 
 
 def row_to_role(row) -> Role:

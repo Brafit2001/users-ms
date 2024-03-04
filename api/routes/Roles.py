@@ -122,3 +122,27 @@ def edit_role(role_id):
         Logger.add_to_log("error", traceback.format_exc())
         response = jsonify({'message': str(ex), 'success': False})
         return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@roles.route('/assign-role', methods=['POST'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.ROLES_MANAGER, PermissionType.WRITE)])
+def assign_role():
+    try:
+        user_id = request.json["user"]
+        role_id = request.json["role"]
+        RoleService.assign_role(user_id, role_id)
+        response = jsonify({'message': 'Role successfully assigned to user', 'success': True})
+        return response, HTTPStatus.OK
+    except KeyError:
+        response = jsonify({'message': 'Bad body format', 'success': False})
+        return response, HTTPStatus.BAD_REQUEST
+    except mariadb.IntegrityError:
+        response = jsonify({'message': 'The User has already the role', 'success': False})
+        return response, HTTPStatus.BAD_REQUEST
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+

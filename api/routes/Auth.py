@@ -33,9 +33,3 @@ def login():
         Logger.add_to_log("error", traceback.format_exc())
         response = jsonify({'message': str(ex), 'success': False})
         return response, HTTPStatus.INTERNAL_SERVER_ERROR
-
-
-@auth.route('/logout', methods=['POST'])
-def log_out():
-    # TODO()
-    pass
