@@ -51,7 +51,8 @@ def get_user_by_id(user_id: int):
     try:
         user_id = int(user_id)
         user = UserService.get_user_by_id(user_id)
-        return user.to_json(), HTTPStatus.OK
+        response = jsonify({'success': True, 'data': user.to_json()})
+        return response, HTTPStatus.OK
     except NotFoundException as ex:
         response = jsonify({'message': ex.message, 'success': False})
         return response, ex.error_code
@@ -97,8 +98,8 @@ def add_user():
 @Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.WRITE)])
 def delete_user(user_id):
     try:
-
-        response = UserService.delete_user(user_id)
+        response_message = UserService.delete_user(user_id)
+        response = jsonify({'message': response_message, 'success': True})
         return response, HTTPStatus.OK
     except NotFoundException as ex:
         response = jsonify({'success': False, 'message': ex.message})
@@ -125,7 +126,8 @@ def edit_user(user_id):
             email=request.json["email"],
             image=None
         )
-        response = UserService.update_user(_user)
+        response_message = UserService.update_user(_user)
+        response = jsonify({'message': response_message, 'success': True})
         return response, HTTPStatus.OK
     except NotFoundException as ex:
         response = jsonify({'success': False, 'message': ex.message})
