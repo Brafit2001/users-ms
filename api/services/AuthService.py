@@ -26,7 +26,7 @@ class AuthService:
                     return authenticated_user
                 if row is not None:
                     authenticated_user = User(
-                        idUser=row[0],
+                        userId=row[0],
                         group=row[1],
                         username=row[2],
                         password=row[3],
@@ -43,14 +43,14 @@ class AuthService:
             raise
 
     @classmethod
-    def get_permissions(cls, idUser):
+    def get_permissions(cls, userid):
         try:
             connection_dbusers = get_connection('dbusers')
             permissions_list = []
             with (connection_dbusers.cursor() as cursor_dbusers):
                 query = ("SELECT permission, permission_type "
                          "FROM relationusersroles a INNER JOIN relationrolespermissions b ON a.role = b.role "
-                         "WHERE a.`user` = '{}'").format(idUser)
+                         "WHERE a.`user` = '{}'").format(userid)
                 cursor_dbusers.execute(query)
                 result_set = cursor_dbusers.fetchall()
                 for row in result_set:

@@ -1,7 +1,7 @@
 class User:
 
-    def __init__(self, idUser, group, username, password, name, surname, image, email) -> None:
-        self.id = idUser
+    def __init__(self, userId, group, username, password, name, surname, image, email) -> None:
+        self.id = userId
         self.group = group
         self.username = username
         self.password = password
@@ -25,8 +25,8 @@ class User:
 
 class UserData:
 
-    def __init__(self, idUser, group, username, name, surname, image, email) -> None:
-        self.id = idUser
+    def __init__(self, userId, group, username, name, surname, image, email) -> None:
+        self.id = userId
         self.group = group
         self.username = username
         self.surname = surname

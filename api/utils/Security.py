@@ -62,7 +62,7 @@ class Security:
             payload = {
                 'iat': datetime.datetime.now(tz=cls.tz),
                 'exp': datetime.datetime.now(tz=cls.tz) + datetime.timedelta(minutes=cls.expiration_time),
-                'idUser': authenticated_user.id,
+                'userId': authenticated_user.id,
                 'username': authenticated_user.username,
             }
             return jwt.encode(payload, cls.secret, algorithm="HS256")
@@ -120,8 +120,8 @@ class Security:
             def wrapper(*args, **kwargs):
                 try:
                     payload = args[0]
-                    idUser = payload['idUser']
-                    permissions_list = AuthService.get_permissions(idUser)
+                    userId = payload['userId']
+                    permissions_list = AuthService.get_permissions(userId)
                     for pr in permissions_required:
                         if pr not in permissions_list:
                             raise NotAuthorized('The user does not have the appropriate permissions')

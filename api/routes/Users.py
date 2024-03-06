@@ -2,8 +2,8 @@ import random
 import string
 import traceback
 from http import HTTPStatus
+
 import mariadb
-from flasgger import swag_from
 from flask import Blueprint, jsonify, request
 
 from api.models.PermissionModel import PermissionName, PermissionType
@@ -72,7 +72,7 @@ def add_user():
 
         password = ''.join(random.choices(string.ascii_lowercase + string.ascii_uppercase +
                                           string.digits, k=6))
-        _user = User(idUser=0, group=None, username=request.json["username"], password=password,
+        _user = User(userId=0, group=None, username=request.json["username"], password=password,
                      name=request.json["name"], surname=request.json["surname"], email=request.json["email"],
                      image=None)
 
@@ -114,7 +114,7 @@ def delete_user(user_id):
 def edit_user(user_id):
     try:
         _user = User(
-            idUser=user_id,
+            userId=user_id,
             group=None,
             username=request.json["username"],
             password=request.json["password"],

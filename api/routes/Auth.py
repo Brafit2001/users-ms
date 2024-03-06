@@ -6,7 +6,6 @@ from api.services.AuthService import AuthService
 from api.utils.Logger import Logger
 from api.utils.Security import Security
 
-
 auth = Blueprint('auth_blueprint', __name__)
 
 
@@ -17,7 +16,7 @@ def login():
         username = request.json['username']
         password = request.json['password']
 
-        _user = User(idUser=0, group=None, username=username, password=password, name='', surname='', email='',
+        _user = User(userId=0, group=None, username=username, password=password, name='', surname='', email='',
                      image=None)
 
         authenticated_user = AuthService.login_user(_user)
@@ -28,6 +27,24 @@ def login():
         else:
             response = jsonify({'message': 'Incorrect username or password'})
             return response, HTTPStatus.UNAUTHORIZED
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@auth.route('/permissions', methods=['GET'])
+@Security.authenticate
+def get_permissions(payload):
+    try:
+        userId = payload['userId']
+        permissions = AuthService.get_permissions(userId)
+        data = []
+        for permission in permissions:
+            data.append((permission[0].value, permission[1].value))
+        response = jsonify({'data': data, 'success': True})
+        return response, HTTPStatus.OK
     except Exception as ex:
         Logger.add_to_log("error", str(ex))
         Logger.add_to_log("error", traceback.format_exc())

@@ -30,7 +30,6 @@ class UserService:
             connection_dbusers.close()
             return users_list
         except mariadb.OperationalError:
-            "Me meto aqui"
             raise
         except EmptyDbException:
             raise
@@ -207,7 +206,7 @@ class UserService:
 
 def row_to_user_data(row) -> UserData:
     return UserData(
-        idUser=row[0],
+        userId=row[0],
         group=row[1],
         username=row[2],
         name=row[4],
@@ -219,7 +218,7 @@ def row_to_user_data(row) -> UserData:
 
 def row_to_user(row) -> User:
     return User(
-        idUser=row[0],
+        userId=row[0],
         group=row[1],
         username=row[2],
         password=row[3],
