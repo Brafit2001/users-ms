@@ -36,6 +36,7 @@ class UserService:
         except Exception as ex:
             Logger.add_to_log("error", str(ex))
             Logger.add_to_log("error", traceback.format_exc())
+            raise
 
     @classmethod
     def get_user_by_id(cls, userId: int) -> User:
@@ -57,6 +58,7 @@ class UserService:
         except Exception as ex:
             Logger.add_to_log("error", str(ex))
             Logger.add_to_log("error", traceback.format_exc())
+            raise
 
     @classmethod
     def get_user_by_username(cls, username: str) -> User:
@@ -78,6 +80,7 @@ class UserService:
         except Exception as ex:
             Logger.add_to_log("error", str(ex))
             Logger.add_to_log("error", traceback.format_exc())
+            raise
 
     @classmethod
     def add_user(cls, user: User):
@@ -103,6 +106,7 @@ class UserService:
         except Exception as ex:
             Logger.add_to_log("error", str(ex))
             Logger.add_to_log("error", traceback.format_exc())
+            raise
 
     @classmethod
     def delete_user(cls, userId: int):
@@ -119,7 +123,9 @@ class UserService:
         except NotFoundException:
             raise
         except Exception as ex:
-            print(ex)
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            raise
 
     @classmethod
     def update_user(cls, user: User):
@@ -146,6 +152,7 @@ class UserService:
         except Exception as ex:
             Logger.add_to_log("error", str(ex))
             Logger.add_to_log("error", traceback.format_exc())
+            raise
 
     @classmethod
     def send_password_email(cls, user):
@@ -161,6 +168,7 @@ class UserService:
         except Exception as ex:
             Logger.add_to_log("error", str(ex))
             Logger.add_to_log("error", traceback.format_exc())
+            raise
 
     @classmethod
     def get_user_role(cls, userId: int):
@@ -179,6 +187,7 @@ class UserService:
         except Exception as ex:
             Logger.add_to_log("error", str(ex))
             Logger.add_to_log("error", traceback.format_exc())
+            raise
 
     @classmethod
     def get_user_permissions(cls, userId: int):
@@ -202,6 +211,7 @@ class UserService:
         except Exception as ex:
             Logger.add_to_log("error", str(ex))
             Logger.add_to_log("error", traceback.format_exc())
+            raise
 
 
 def row_to_user_data(row) -> UserData:

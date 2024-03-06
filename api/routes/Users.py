@@ -104,6 +104,8 @@ def delete_user(user_id):
         response = jsonify({'success': False, 'message': ex.message})
         return response, ex.error_code
     except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
         response = jsonify({'message': str(ex), 'success': False})
         return response, HTTPStatus.INTERNAL_SERVER_ERROR
 
