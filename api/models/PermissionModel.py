@@ -25,3 +25,10 @@ class Permission:
 
     def to_tuple(self):
         return self.name, self.permission_type
+
+
+def row_to_permission(row):
+    return Permission(
+        idPermission=row[0],
+        permission_type=PermissionType(row[1])
+    )

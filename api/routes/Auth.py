@@ -16,7 +16,7 @@ def login():
         username = request.json['username']
         password = request.json['password']
 
-        _user = User(userId=0, group=None, username=username, password=password, name='', surname='', email='',
+        _user = User(userId=0, username=username, password=password, name='', surname='', email='',
                      image=None)
 
         authenticated_user = AuthService.login_user(_user)

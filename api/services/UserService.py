@@ -1,12 +1,11 @@
 import traceback
-from werkzeug.security import check_password_hash, generate_password_hash
-from http import HTTPStatus
 
 import mariadb
+from werkzeug.security import generate_password_hash
 
 from api.database.db import get_connection
-from api.models.PermissionModel import Permission, PermissionType
-from api.models.UserModel import User, UserData
+from api.models.PermissionModel import row_to_permission
+from api.models.UserModel import User, row_to_user
 from api.utils.AppExceptions import EmptyDbException, NotFoundException
 from api.utils.Logger import Logger
 
@@ -14,7 +13,7 @@ from api.utils.Logger import Logger
 class UserService:
 
     @classmethod
-    def get_all_users(cls) -> list[UserData]:
+    def get_all_users(cls) -> list[User]:
         try:
             connection_dbusers = get_connection('dbusers')
             users_list = []
@@ -25,7 +24,7 @@ class UserService:
                 if not result_set:
                     raise EmptyDbException("No users found")
                 for row in result_set:
-                    user = row_to_user_data(row)
+                    user = row_to_user(row)
                     users_list.append(user)
             connection_dbusers.close()
             return users_list
@@ -87,7 +86,6 @@ class UserService:
         try:
             connection_dbusers = get_connection('dbusers')
             with (connection_dbusers.cursor()) as cursor_dbusers:
-                print(user.password)
                 query = ("insert into users set username = '{}',password = '{}', name = '{}' ,surname = '{}', "
                          "email = '{}'").format(
                     user.username,
@@ -212,36 +210,3 @@ class UserService:
             Logger.add_to_log("error", str(ex))
             Logger.add_to_log("error", traceback.format_exc())
             raise
-
-
-def row_to_user_data(row) -> UserData:
-    return UserData(
-        userId=row[0],
-        group=row[1],
-        username=row[2],
-        name=row[4],
-        surname=row[5],
-        email=row[6],
-        image=row[7]
-    )
-
-
-def row_to_user(row) -> User:
-    return User(
-        userId=row[0],
-        group=row[1],
-        username=row[2],
-        password=row[3],
-        name=row[4],
-        surname=row[5],
-        email=row[6],
-        image=row[7]
-    )
-
-
-def row_to_permission(row) -> Permission:
-    print(row)
-    return Permission(
-        idPermission=row[1],
-        permission_type=PermissionType(row[2])
-    )

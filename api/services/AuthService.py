@@ -1,12 +1,14 @@
 import traceback
-from werkzeug.security import check_password_hash, generate_password_hash
+
+from werkzeug.security import check_password_hash
+
 # Database
 from api.database.db import get_connection
-from api.models.PermissionModel import Permission, PermissionType
+from api.models.PermissionModel import row_to_permission
+# Models
+from api.models.UserModel import row_to_user
 # Logger
 from api.utils.Logger import Logger
-# Models
-from api.models.UserModel import User
 
 
 class AuthService:
@@ -21,20 +23,11 @@ class AuthService:
                     user.username)
                 cursor_dbusers.execute(query)
                 row = cursor_dbusers.fetchone()
-                check_password = check_password_hash(pwhash=row[3], password=user.password)
+                check_password = check_password_hash(pwhash=row[2], password=user.password)
                 if check_password is False:
                     return authenticated_user
                 if row is not None:
-                    authenticated_user = User(
-                        userId=row[0],
-                        group=row[1],
-                        username=row[2],
-                        password=row[3],
-                        name=row[4],
-                        surname=row[5],
-                        email=row[6],
-                        image=row[7]
-                    )
+                    authenticated_user = row_to_user(row=row)
             connection_dbusers.close()
             return authenticated_user
         except Exception as ex:
@@ -64,8 +57,3 @@ class AuthService:
             raise
 
 
-def row_to_permission(row):
-    return Permission(
-        idPermission=row[0],
-        permission_type=PermissionType(row[1])
-    )

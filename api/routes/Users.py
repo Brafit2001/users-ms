@@ -73,7 +73,8 @@ def add_user():
 
         password = ''.join(random.choices(string.ascii_lowercase + string.ascii_uppercase +
                                           string.digits, k=6))
-        _user = User(userId=0, group=None, username=request.json["username"], password=password,
+        print(password)
+        _user = User(userId=0, username=request.json["username"], password=password,
                      name=request.json["name"], surname=request.json["surname"], email=request.json["email"],
                      image=None)
 
@@ -118,7 +119,6 @@ def edit_user(user_id):
     try:
         _user = User(
             userId=user_id,
-            group=None,
             username=request.json["username"],
             password=request.json["password"],
             name=request.json["name"],
@@ -129,6 +129,9 @@ def edit_user(user_id):
         response_message = UserService.update_user(_user)
         response = jsonify({'message': response_message, 'success': True})
         return response, HTTPStatus.OK
+    except KeyError:
+        response = jsonify({'message': 'Bad body format', 'success': False})
+        return response, HTTPStatus.BAD_REQUEST
     except NotFoundException as ex:
         response = jsonify({'success': False, 'message': ex.message})
         return response, ex.error_code

@@ -1,8 +1,7 @@
 class User:
 
-    def __init__(self, userId, group, username, password, name, surname, image, email) -> None:
+    def __init__(self, userId, username, password, name, surname, image, email) -> None:
         self.id = userId
-        self.group = group
         self.username = username
         self.password = password
         self.surname = surname
@@ -13,31 +12,6 @@ class User:
     def to_json(self) -> dict:
         return {
             'id': self.id,
-            'group': self.group,
-            'username': self.username,
-            'password': self.password,
-            'surname': self.surname,
-            'name': self.name,
-            'email': self.email,
-            'image': self.image
-        }
-
-
-class UserData:
-
-    def __init__(self, userId, group, username, name, surname, image, email) -> None:
-        self.id = userId
-        self.group = group
-        self.username = username
-        self.surname = surname
-        self.name = name
-        self.email = email
-        self.image = image
-
-    def to_json(self) -> dict:
-        return {
-            'id': self.id,
-            'group': self.group,
             'username': self.username,
             'surname': self.surname,
             'name': self.name,
@@ -46,9 +20,12 @@ class UserData:
         }
 
 
-class UserCourse:
-
-    def __init__(self, username, classId, course) -> None:
-        self.user = username
-        self.classId = classId
-        self.course = course
+def row_to_user(row):
+    return User(
+        userId=row[0],
+        username=row[1],
+        password=row[2],
+        name=row[3],
+        surname=row[4],
+        email=row[5],
+        image=row[6])
