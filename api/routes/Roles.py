@@ -124,7 +124,7 @@ def edit_role(role_id):
         return response, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
-@roles.route('/assign-role', methods=['POST'])
+@roles.route('/assign-user-to-role', methods=['POST'])
 @Security.authenticate
 @Security.authorize(permissions_required=[(PermissionName.ROLES_MANAGER, PermissionType.WRITE)])
 def assign_role():
