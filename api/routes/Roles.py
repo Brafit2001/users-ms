@@ -9,6 +9,7 @@ from api.models.RoleModel import Role
 from api.services.RoleService import RoleService
 from api.utils.AppExceptions import EmptyDbException, NotFoundException
 from api.utils.Logger import Logger
+from api.utils.QueryParameters import QueryParameters
 from api.utils.Security import Security
 
 roles = Blueprint('roles_blueprint', __name__)
@@ -25,7 +26,8 @@ roles = Blueprint('roles_blueprint', __name__)
 @Security.authorize(permissions_required=[(PermissionName.ROLES_MANAGER, PermissionType.READ)])
 def get_all_roles():
     try:
-        roles_list = RoleService.get_all_roles()
+        params = QueryParameters(request)
+        roles_list = RoleService.get_all_roles(params)
         response_roles = []
         for role in roles_list:
             response_roles.append(role.to_json())

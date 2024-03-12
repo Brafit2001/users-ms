@@ -8,17 +8,19 @@ from api.models.PermissionModel import row_to_permission
 from api.models.UserModel import User, row_to_user
 from api.utils.AppExceptions import EmptyDbException, NotFoundException
 from api.utils.Logger import Logger
+from api.utils.QueryParameters import QueryParameters
 
 
 class UserService:
 
     @classmethod
-    def get_all_users(cls) -> list[User]:
+    def get_all_users(cls, params: QueryParameters) -> list[User]:
         try:
             connection_dbusers = get_connection('dbusers')
             users_list = []
             with (connection_dbusers.cursor()) as cursor_dbusers:
                 query = "select * from users"
+                query = params.add_to_query(query)
                 cursor_dbusers.execute(query)
                 result_set = cursor_dbusers.fetchall()
                 if not result_set:

@@ -12,6 +12,7 @@ from api.services.AuthService import AuthService
 from api.services.UserService import UserService
 from api.utils.AppExceptions import EmptyDbException, NotFoundException
 from api.utils.Logger import Logger
+from api.utils.QueryParameters import QueryParameters
 from api.utils.Security import Security
 
 users = Blueprint('users_blueprint', __name__)
@@ -25,7 +26,8 @@ users = Blueprint('users_blueprint', __name__)
 @Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.READ)])
 def get_all_users():
     try:
-        users_list = UserService.get_all_users()
+        params = QueryParameters(request)
+        users_list = UserService.get_all_users(params)
         response_users = []
         for user in users_list:
             response_users.append(user.to_json())

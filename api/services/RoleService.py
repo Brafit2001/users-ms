@@ -6,17 +6,19 @@ from api.database.db import get_connection
 from api.models.RoleModel import Role
 from api.utils.AppExceptions import EmptyDbException, NotFoundException
 from api.utils.Logger import Logger
+from api.utils.QueryParameters import QueryParameters
 
 
 class RoleService:
 
     @classmethod
-    def get_all_roles(cls) -> list[Role]:
+    def get_all_roles(cls, params: QueryParameters) -> list[Role]:
         try:
             connection_dbusers = get_connection('dbusers')
             roles_list = []
             with connection_dbusers.cursor() as cursor_dbusers:
                 query = "select * from roles"
+                query = params.add_to_query(query)
                 cursor_dbusers.execute(query)
                 result_set = cursor_dbusers.fetchall()
                 if not result_set:
