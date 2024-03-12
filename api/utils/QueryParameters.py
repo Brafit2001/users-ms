@@ -11,7 +11,7 @@ class QueryParameters:
             if param_value is not None:
 
                 if "where" not in query:
-                    query += f" where {param} in ('{param_value}')"
+                    query += f" where `{param}` in ('{param_value}')"
                 else:
-                    query += f" and {param} in ('{param_value}')"
+                    query += f" and `{param}` in ('{param_value}')"
         return query
