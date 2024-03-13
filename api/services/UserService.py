@@ -1,3 +1,5 @@
+import random
+import string
 import traceback
 
 import mariadb
@@ -87,6 +89,9 @@ class UserService:
     def add_user(cls, user: User):
         try:
             connection_dbusers = get_connection('dbusers')
+            password = ''.join(random.choices(string.ascii_lowercase + string.ascii_uppercase +
+                                              string.digits, k=6))
+            user.password = password
             with (connection_dbusers.cursor()) as cursor_dbusers:
                 query = ("insert into users set username = '{}',password = '{}', name = '{}' ,surname = '{}', "
                          "email = '{}'").format(

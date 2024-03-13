@@ -1,4 +1,5 @@
 import random
+import csv
 import string
 import traceback
 from http import HTTPStatus
@@ -7,7 +8,7 @@ import mariadb
 from flask import Blueprint, jsonify, request
 
 from api.models.PermissionModel import PermissionName, PermissionType
-from api.models.UserModel import User
+from api.models.UserModel import User, row_to_user
 from api.services.AuthService import AuthService
 from api.services.UserService import UserService
 from api.utils.AppExceptions import EmptyDbException, NotFoundException
@@ -73,10 +74,7 @@ def get_user_by_id(user_id: int):
 def add_user():
     try:
 
-        password = ''.join(random.choices(string.ascii_lowercase + string.ascii_uppercase +
-                                          string.digits, k=6))
-        print(password)
-        _user = User(userId=0, username=request.json["username"], password=password,
+        _user = User(userId=0, username=request.json["username"], password="",
                      name=request.json["name"], surname=request.json["surname"], email=request.json["email"],
                      image=None)
 
@@ -164,6 +162,49 @@ def check_user_permissions(user_id):
                 data.append({"id": permission_id, "name": permission_name, "type": [permission_type]})
         response = jsonify({'data': data, 'success': True})
         return response, HTTPStatus.OK
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@users.route('/import-csv', methods=['POST'])
+def import_users_csv():
+    try:
+        created = []
+        failed = []
+        with open('api/static/prueba.csv', newline='') as csvfile:
+            csv_reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
+            line_count = 0
+            for row in csv_reader:
+                if line_count != 0:
+                    # Ponemos el id a 0 (es incremental)
+                    row_info = [0] + row[0].split(';')
+                    # Rellenamos la posición de la contraseña en vacío
+                    row_info.insert(2, "")
+
+                    _user = row_to_user(row_info)
+                    try:
+                        UserService.add_user(_user)
+                        created.append(_user.username)
+                    except KeyError:
+                        response = {'user': _user.username, 'reason': 'Bad format'}
+                        failed.append(response)
+                    except mariadb.IntegrityError:
+                        response = {'user': _user.username, 'reason': 'User already exists'}
+                        failed.append(response)
+                    except Exception as ex:
+                        Logger.add_to_log("error", str(ex))
+                        Logger.add_to_log("error", traceback.format_exc())
+                        response = {'user': _user.username, 'reason': str(ex)}
+                        failed.append(response)
+
+                line_count += 1
+
+        response = jsonify({'message': 'Process Completed','created': created, 'failed': failed,'success': True})
+        return response, HTTPStatus.OK
+
     except Exception as ex:
         Logger.add_to_log("error", str(ex))
         Logger.add_to_log("error", traceback.format_exc())
