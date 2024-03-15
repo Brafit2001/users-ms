@@ -6,7 +6,9 @@ import traceback
 from http import HTTPStatus
 
 import mariadb
+import requests
 from flask import Blueprint, jsonify, request
+from flask_cors import cross_origin
 
 from api.models.PermissionModel import PermissionName, PermissionType
 from api.models.UserModel import User, row_to_user
@@ -18,7 +20,7 @@ from api.utils.QueryParameters import QueryParameters
 from api.utils.Security import Security
 
 users = Blueprint('users_blueprint', __name__)
-
+GROUP_HOST = "http://localhost:8083"
 
 # EJEMPLO SWAGGER
 # @swag_from("users.yml", methods=['GET'])
@@ -26,7 +28,7 @@ users = Blueprint('users_blueprint', __name__)
 @users.route('/', methods=['GET'])
 @Security.authenticate
 @Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.READ)])
-def get_all_users():
+def get_all_users(*args):
     try:
         params = QueryParameters(request)
         users_list = UserService.get_all_users(params)
@@ -34,6 +36,8 @@ def get_all_users():
         for user in users_list:
             response_users.append(user.to_json())
         response = jsonify({'success': True, 'data': response_users})
+        response.headers.set('Access-Control-Allow-Origin', '*')
+        response.headers.set("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept")
         return response, HTTPStatus.OK
     except mariadb.OperationalError as ex:
         response = jsonify({'success': False, 'message': str(ex)})
@@ -171,13 +175,17 @@ def check_user_permissions(user_id):
 
 
 @users.route('/import-csv', methods=['POST'])
-def import_users_csv():
-    columns = ["username", "name", "surname", "email", "image"]
-
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.WRITE)])
+def import_users_csv(*args):
+    columns = ["username", "name", "surname", "email", "group name", "class name", "subject name", "course name",
+               "course year"]
+    # QUITAR IMAGE (METER GROUP)
     try:
         created = []
         failed = []
-
+        token = args[1]
+        headers = {"Authorization": token, "Content-Type": "application/json"}
         csv_file = request.files['import-csv-users']
         stream = io.StringIO(csv_file.stream.read().decode("UTF8"), newline=None)
         csv_input = csv.reader(stream)
@@ -185,18 +193,31 @@ def import_users_csv():
         for row in csv_input:
             if line_count == 0:
                 if row[0].split(';') != columns:
-                    raise BadCsvFormatException("The csv Format is not correct - Header should be: "
-                                                "<username;name;surname;email;image>")
+                    raise BadCsvFormatException(f"The csv Format is not correct - Header should be: "
+                                                f"{columns}")
             if line_count != 0:
                 # Ponemos el id a 0 (es incremental)
                 row_info = [0] + row[0].split(';')
-                # Rellenamos la posición de la contraseña en vacío
-                row_info.insert(2, "")
-
+                # Dejamos la posición de la contraseña y la imagen en vacío
+                row_info.insert(2, "")  # CONTRASEÑA
+                row_info.insert(6, "")  # IMAGEN
+                group_name = row_info[7]
+                class_name = row_info[8]
+                subject = row_info[9]
+                course_name = row_info[10]
+                course_year = row_info[11]
                 _user = row_to_user(row_info)
                 try:
-                    UserService.add_user(_user)
+                    # Obtenemos el id del grupo a partir de su información
+                    group_id = requests.get(f'{GROUP_HOST}/groups/find-id-by-name?'
+                                            f'name={group_name}&class={class_name}&subject={subject}&course={course_name}'
+                                            f'&year={course_year}', headers=headers).json()["groupId"]
+                    # Añadimos el usuario
+                    user_id = UserService.add_user(_user)
+                    # Asignamos el usuario al grupo
+                    UserService.assign_group(userId=user_id, groupId=group_id)
                     created.append(_user.username)
+
                 except KeyError:
                     response = {'user': _user.username, 'reason': 'Bad format'}
                     failed.append(response)
@@ -211,7 +232,7 @@ def import_users_csv():
 
             line_count += 1
 
-        response = jsonify({'message': 'Process Completed','created': created, 'failed': failed,'success': True})
+        response = jsonify({'message': 'Process Completed', 'created': created, 'failed': failed, 'success': True})
         return response, HTTPStatus.OK
     except KeyError:
         response = jsonify({'message': 'Bad key file format - should be `import-csv-users`', 'success': False})

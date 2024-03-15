@@ -103,8 +103,13 @@ class UserService:
                 )
                 cursor_dbusers.execute(query)
                 connection_dbusers.commit()
+
+                query = "select * from users where username = '{}'".format(user.username)
+                cursor_dbusers.execute(query)
+                user_id = cursor_dbusers.fetchone()[0]
+
             connection_dbusers.close()
-            return 'User added'
+            return user_id
         except mariadb.IntegrityError:
             # User already exists
             raise
@@ -212,6 +217,23 @@ class UserService:
             connection_dbusers.close()
             return permissions_list
         except EmptyDbException:
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            raise
+
+    @classmethod
+    def assign_group(cls, userId: int, groupId: int):
+        try:
+            connection_dbgroups = get_connection('dbgroups')
+            with connection_dbgroups.cursor() as cursor_dbgroups:
+                query = "insert into relationusersgroups set user='{}', `group`='{}'".format(userId, groupId)
+                cursor_dbgroups.execute(query)
+                connection_dbgroups.commit()
+            connection_dbgroups.close()
+            return 'User was assigned to group successfully'
+        except NotFoundException:
             raise
         except Exception as ex:
             Logger.add_to_log("error", str(ex))

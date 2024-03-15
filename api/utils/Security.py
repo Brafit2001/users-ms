@@ -31,8 +31,8 @@ class Security:
         @wraps(func)
         def decorated_function(*args, **kwargs):
             try:
-                payload = cls.verify_token(request.headers)
-                return func(payload, *args, **kwargs)
+                payload, token = cls.verify_token(request.headers)
+                return func(payload, token, *args, **kwargs)
             except KeyError:
                 response = jsonify({'error': 'Authorization header not found', 'success': False})
                 return response, HTTPStatus.UNAUTHORIZED
@@ -84,7 +84,7 @@ class Security:
             authorization = headers['Authorization']
             encoded_token = authorization.split(" ")[1]
             payload = jwt.decode(encoded_token, cls.secret, algorithms=["HS256"])
-            return payload
+            return payload, authorization
         except IndexError:
             '''Bad token format'''
             raise
@@ -125,7 +125,7 @@ class Security:
                     for pr in permissions_required:
                         if pr not in permissions_list:
                             raise NotAuthorized('The user does not have the appropriate permissions')
-                    return func(**kwargs)
+                    return func(*args, **kwargs)
                 except NotAuthorized as ex:
                     response = jsonify({'success': False, 'message': ex.message})
                     return response, ex.error_code

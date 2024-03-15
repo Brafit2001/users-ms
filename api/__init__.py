@@ -1,5 +1,6 @@
 from flasgger import LazyJSONEncoder
 from flask import Flask
+from flask_cors import CORS
 
 from config import SWAGGERUI_BLUEPRINT, SWAGGER_URL
 
@@ -9,6 +10,9 @@ from config import SWAGGERUI_BLUEPRINT, SWAGGER_URL
 
 def init_app(config):
     app = Flask(__name__)
+    cors = CORS(app)
+    app.config['CORS_HEADERS'] = 'Content-Type'
+
     # Configuration
     app.config.from_object(config)
     app.json_encoder = LazyJSONEncoder
