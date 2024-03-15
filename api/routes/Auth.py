@@ -36,8 +36,9 @@ def login():
 
 @auth.route('/permissions', methods=['GET'])
 @Security.authenticate
-def get_permissions(payload):
+def get_permissions(*args):
     try:
+        payload = args[0]
         userId = payload['userId']
         permissions = AuthService.get_permissions(userId)
         data = []
