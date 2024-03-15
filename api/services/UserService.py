@@ -144,10 +144,9 @@ class UserService:
             cls.get_user_by_id(user.id)
             connection_dbusers = get_connection('dbusers')
             with (connection_dbusers.cursor()) as cursor_dbusers:
-                query = ("update users set username = '{}',password = '{}', name = '{}' ,surname = '{}', email = '{}' "
+                query = ("update users set username = '{}', name = '{}' ,surname = '{}', email = '{}' "
                          "where id = '{}'").format(
                     user.username,
-                    user.password,
                     user.name,
                     user.surname,
                     user.email,

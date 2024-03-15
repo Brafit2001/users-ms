@@ -55,9 +55,9 @@ def get_all_users(*args):
 @users.route('/<user_id>', methods=['GET'])
 @Security.authenticate
 @Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.READ)])
-def get_user_by_id(user_id: int):
+def get_user_by_id(*args, **kwargs):
     try:
-        user_id = int(user_id)
+        user_id = int(kwargs["user_id"])
         user = UserService.get_user_by_id(user_id)
         response = jsonify({'success': True, 'data': user.to_json()})
         return response, HTTPStatus.OK
@@ -76,7 +76,7 @@ def get_user_by_id(user_id: int):
 @users.route('/', methods=['POST'])
 @Security.authenticate
 @Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.WRITE)])
-def add_user():
+def add_user(*args):
     try:
 
         _user = User(userId=0, username=request.json["username"], password="",
@@ -102,8 +102,9 @@ def add_user():
 @users.route('/<user_id>', methods=['DELETE'])
 @Security.authenticate
 @Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.WRITE)])
-def delete_user(user_id):
+def delete_user(*args, **kwargs):
     try:
+        user_id = int(kwargs["user_id"])
         response_message = UserService.delete_user(user_id)
         response = jsonify({'message': response_message, 'success': True})
         return response, HTTPStatus.OK
@@ -120,12 +121,13 @@ def delete_user(user_id):
 @users.route('/<user_id>', methods=['PUT'])
 @Security.authenticate
 @Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.WRITE)])
-def edit_user(user_id):
+def edit_user(*args, **kwargs):
     try:
+        user_id = int(kwargs["user_id"])
         _user = User(
             userId=user_id,
             username=request.json["username"],
-            password=request.json["password"],
+            password="",
             name=request.json["name"],
             surname=request.json["surname"],
             email=request.json["email"],
@@ -150,8 +152,9 @@ def edit_user(user_id):
 @users.route('/<user_id>/check-permissions', methods=['GET'])
 @Security.authenticate
 @Security.authorize(permissions_required=[(PermissionName.ROLES_MANAGER, PermissionType.READ)])
-def check_user_permissions(user_id):
+def check_user_permissions(*args, **kwargs):
     try:
+        user_id = int(kwargs["user_id"])
         permissions = AuthService.get_permissions(user_id)
         data = []
         for p in permissions:
@@ -196,9 +199,10 @@ def import_users_csv(*args):
                     raise BadCsvFormatException(f"The csv Format is not correct - Header should be: "
                                                 f"{columns}")
             if line_count != 0:
-                # Ponemos el id a 0 (es incremental)
-                row_info = [0] + row[0].split(';')
+                row_info = row[0].split(';')
+
                 # Dejamos la posición de la contraseña y la imagen en vacío
+                row_info.insert(0, "")
                 row_info.insert(2, "")  # CONTRASEÑA
                 row_info.insert(6, "")  # IMAGEN
                 group_name = row_info[7]

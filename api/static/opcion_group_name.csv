@@ -1,0 +1,5 @@
+username;name;surname;email;group name;class name;subject name;course name;course year
+johndoe;John;Doe;johndoe@example.com;Grupo 1;Grupo 81;Algebra Lineal;Informatica;2023/2024
+sarasmith;Sara;Smith;sara.smith@example.com;Grupo 1;Grupo 81;Algebra Lineal;Informatica;2023/2024
+mikejones;Mike;Jones;mike.jones@example.com;Grupo 2;Grupo 81;Algebra Lineal;Informatica;2023/2024
+emilybrown;Emily;Brown;emily.brown@example.com;Grupo 3;Grupo 81;Algebra Lineal;Informatica;2023/2024
