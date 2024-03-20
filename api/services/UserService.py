@@ -164,6 +164,23 @@ class UserService:
             raise
 
     @classmethod
+    def update_password(cls, password, user_id):
+        try:
+            connection_dbusers = get_connection('dbusers')
+            with (connection_dbusers.cursor()) as cursor_dbusers:
+                query = "update users set password = '{}' where id = '{}'".format(generate_password_hash(password), user_id)
+                cursor_dbusers.execute(query)
+                connection_dbusers.commit()
+            connection_dbusers.close()
+            return f'User Password updated'
+        except NotFoundException:
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            raise
+
+    @classmethod
     def send_password_email(cls, user):
         try:
             pass

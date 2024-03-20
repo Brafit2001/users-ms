@@ -12,16 +12,14 @@ from flask import render_template, jsonify
 from api.utils.Logger import Logger
 
 
-def sendPasswordEmail(user):
+def sendPasswordEmail(user, subject, template):
     try:
         email_sender = 'clipclassuc3m@gmail.com'
         credential = config('GOOGLE_PASSWORD')
         email_receiver = user.email
-        # Email subject
-        subject = 'Registration Confirmation'
 
         # Email template and vars
-        body = render_template('studentEmail.html')
+        body = render_template(template)
         body = string.Template(body).substitute(name=user.name, surname=user.surname, username=user.surname,
                                                 password=user.password)
 

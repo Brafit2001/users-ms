@@ -69,3 +69,17 @@ class EmailSendException(Exception):
         super().__init__(message)
         self.message = message
         self.error_code = HTTPStatus.UNPROCESSABLE_ENTITY
+
+
+class PasswordCoincidenceException(Exception):
+    """Exception raised when password is the same as the old one
+
+        Attributes:
+                message -- explanation of the error
+                error_code -- code of the error
+    """
+
+    def __init__(self, message):
+        super().__init__(message)
+        self.message = message
+        self.error_code = HTTPStatus.UNPROCESSABLE_ENTITY

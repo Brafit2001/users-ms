@@ -14,12 +14,14 @@ import requests
 from decouple import config
 from flask import Blueprint, jsonify, request, render_template
 from flask_cors import cross_origin
+from werkzeug.security import check_password_hash
 
 from api.models.PermissionModel import PermissionName, PermissionType
 from api.models.UserModel import User, row_to_user
 from api.services.AuthService import AuthService
 from api.services.UserService import UserService
-from api.utils.AppExceptions import EmptyDbException, NotFoundException, BadCsvFormatException, EmailSendException
+from api.utils.AppExceptions import EmptyDbException, NotFoundException, BadCsvFormatException, EmailSendException, \
+    PasswordCoincidenceException
 from api.utils.EmailSend import sendPasswordEmail
 from api.utils.Logger import Logger
 from api.utils.QueryParameters import QueryParameters
@@ -94,7 +96,7 @@ def add_user(*args):
                      name=name, surname=surname, email=email,
                      image=None)
         _user = UserService.add_user(_user)
-        if not sendPasswordEmail(_user):
+        if not sendPasswordEmail(_user, 'Registration Confirmation', 'studentEmail.html'):
             UserService.delete_user(_user.id)
             raise EmailSendException("Email could not be send")
         response = jsonify({'message': 'User created successfully', 'success': True})
@@ -260,6 +262,42 @@ def import_users_csv(*args):
         return response, HTTPStatus.BAD_REQUEST
     except BadCsvFormatException as ex:
         response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@users.route('/<user_id>/change-password', methods=['PUT'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.WRITE)])
+def change_password(*args, **kwargs):
+    try:
+        user_id = int(kwargs["user_id"])
+        password = request.json["password"]
+
+        user = UserService.get_user_by_id(user_id)
+        if check_password_hash(user.password, password):
+            raise PasswordCoincidenceException('Password cannot be the same as the old one')
+        user.password = password
+        UserService.update_password(password, user_id)
+        if not sendPasswordEmail(user, 'Password Changed', 'passwordUpdateEmail.html'):
+            raise EmailSendException('Something went wrong sending the email')
+        response = jsonify({'message': 'Password updated successfully', 'success': True})
+        return response, HTTPStatus.OK
+    except EmailSendException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except PasswordCoincidenceException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except KeyError:
+        response = jsonify({'message': 'Bad body format', 'success': False})
+        return response, HTTPStatus.BAD_REQUEST
+    except NotFoundException as ex:
+        response = jsonify({'success': False, 'message': ex.message})
         return response, ex.error_code
     except Exception as ex:
         Logger.add_to_log("error", str(ex))
