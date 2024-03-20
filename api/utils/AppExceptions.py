@@ -55,3 +55,17 @@ class BadCsvFormatException(Exception):
         super().__init__(message)
         self.message = message
         self.error_code = HTTPStatus.UNPROCESSABLE_ENTITY
+
+
+class EmailSendException(Exception):
+    """Exception raised when email sending is not supported
+
+        Attributes:
+            message -- explanation of the error
+            error_code -- code of the error
+    """
+
+    def __init__(self, message):
+        super().__init__(message)
+        self.message = message
+        self.error_code = HTTPStatus.UNPROCESSABLE_ENTITY

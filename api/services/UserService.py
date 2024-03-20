@@ -106,10 +106,10 @@ class UserService:
 
                 query = "select * from users where username = '{}'".format(user.username)
                 cursor_dbusers.execute(query)
-                user_id = cursor_dbusers.fetchone()[0]
+                user.id = cursor_dbusers.fetchone()[0]
 
             connection_dbusers.close()
-            return user_id
+            return user
         except mariadb.IntegrityError:
             # User already exists
             raise

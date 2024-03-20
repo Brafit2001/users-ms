@@ -1,26 +1,33 @@
 import io
 import random
 import csv
+import smtplib
+import ssl
 import string
 import traceback
+from email.message import EmailMessage
+from email.utils import formataddr
 from http import HTTPStatus
 
 import mariadb
 import requests
-from flask import Blueprint, jsonify, request
+from decouple import config
+from flask import Blueprint, jsonify, request, render_template
 from flask_cors import cross_origin
 
 from api.models.PermissionModel import PermissionName, PermissionType
 from api.models.UserModel import User, row_to_user
 from api.services.AuthService import AuthService
 from api.services.UserService import UserService
-from api.utils.AppExceptions import EmptyDbException, NotFoundException, BadCsvFormatException
+from api.utils.AppExceptions import EmptyDbException, NotFoundException, BadCsvFormatException, EmailSendException
+from api.utils.EmailSend import sendPasswordEmail
 from api.utils.Logger import Logger
 from api.utils.QueryParameters import QueryParameters
 from api.utils.Security import Security
 
 users = Blueprint('users_blueprint', __name__)
 GROUP_HOST = "http://localhost:8083"
+
 
 # EJEMPLO SWAGGER
 # @swag_from("users.yml", methods=['GET'])
@@ -79,17 +86,27 @@ def get_user_by_id(*args, **kwargs):
 def add_user(*args):
     try:
 
-        _user = User(userId=0, username=request.json["username"], password="",
-                     name=request.json["name"], surname=request.json["surname"], email=request.json["email"],
+        username = request.json["username"]
+        name = request.json["name"]
+        surname = request.json["surname"]
+        email = request.json["email"]
+        _user = User(userId=0, username=username, password="",
+                     name=name, surname=surname, email=email,
                      image=None)
-
-        UserService.add_user(_user)
+        _user = UserService.add_user(_user)
+        if not sendPasswordEmail(_user):
+            UserService.delete_user(_user.id)
+            raise EmailSendException("Email could not be send")
         response = jsonify({'message': 'User created successfully', 'success': True})
         return response, HTTPStatus.OK
+    except EmailSendException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
     except KeyError:
         response = jsonify({'message': 'Bad body format', 'success': False})
         return response, HTTPStatus.BAD_REQUEST
-    except mariadb.IntegrityError:
+    except mariadb.IntegrityError as ex:
+        print(ex)
         response = jsonify({'message': 'Username is already taken', 'success': False})
         return response, HTTPStatus.BAD_REQUEST
     except Exception as ex:
@@ -217,7 +234,7 @@ def import_users_csv(*args):
                                             f'name={group_name}&class={class_name}&subject={subject}&course={course_name}'
                                             f'&year={course_year}', headers=headers).json()["groupId"]
                     # Añadimos el usuario
-                    user_id = UserService.add_user(_user)
+                    user_id = UserService.add_user(_user).id
                     # Asignamos el usuario al grupo
                     UserService.assign_group(userId=user_id, groupId=group_id)
                     created.append(_user.username)
