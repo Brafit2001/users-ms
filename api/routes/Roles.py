@@ -24,7 +24,7 @@ roles = Blueprint('roles_blueprint', __name__)
 @roles.route('/', methods=['GET'])
 @Security.authenticate
 @Security.authorize(permissions_required=[(PermissionName.ROLES_MANAGER, PermissionType.READ)])
-def get_all_roles():
+def get_all_roles(*args):
     try:
         params = QueryParameters(request)
         roles_list = RoleService.get_all_roles(params)
@@ -46,9 +46,9 @@ def get_all_roles():
 @roles.route('/<role_id>', methods=['GET'])
 @Security.authenticate
 @Security.authorize(permissions_required=[(PermissionName.ROLES_MANAGER, PermissionType.READ)])
-def get_role_by_id(role_id: int):
+def get_role_by_id(*args, **kwargs):
     try:
-        role_id = int(role_id)
+        role_id = int(kwargs["role_id"])
         role = RoleService.get_role_by_id(role_id)
         return role.to_json(), HTTPStatus.OK
 
@@ -67,7 +67,7 @@ def get_role_by_id(role_id: int):
 @roles.route('/', methods=['POST'])
 @Security.authenticate
 @Security.authorize(permissions_required=[(PermissionName.ROLES_MANAGER, PermissionType.WRITE)])
-def add_role():
+def add_role(*args):
     try:
         _role = Role(idRole=0, name=request.json["name"])
         RoleService.add_role(_role)
@@ -89,8 +89,9 @@ def add_role():
 @roles.route('/<role_id>', methods=['DELETE'])
 @Security.authenticate
 @Security.authorize(permissions_required=[(PermissionName.ROLES_MANAGER, PermissionType.WRITE)])
-def delete_role(role_id: int):
+def delete_role(*args, **kwargs):
     try:
+        role_id = int(kwargs["role_id"])
         role_deleted = RoleService.delete_role(role_id)
         response = jsonify({'message': f'Role with name <{role_deleted.name}> deleted successfully', 'success': True})
         return response, HTTPStatus.OK
@@ -107,8 +108,9 @@ def delete_role(role_id: int):
 @roles.route('/<role_id>', methods=['PUT'])
 @Security.authenticate
 @Security.authorize(permissions_required=[(PermissionName.ROLES_MANAGER, PermissionType.WRITE)])
-def edit_role(role_id):
+def edit_role(*args, **kwargs):
     try:
+        role_id = int(kwargs["role_id"])
         _role = Role(idRole=role_id, name=request.json["name"])
         RoleService.update_role(_role)
         response = jsonify({'message': f'Role with id <{role_id}> updated successfully', 'success': True})
@@ -129,7 +131,7 @@ def edit_role(role_id):
 @roles.route('/assign-user-to-role', methods=['POST'])
 @Security.authenticate
 @Security.authorize(permissions_required=[(PermissionName.ROLES_MANAGER, PermissionType.WRITE)])
-def assign_role():
+def assign_role(*args):
     try:
         user_id = request.json["user"]
         role_id = request.json["role"]

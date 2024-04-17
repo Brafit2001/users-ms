@@ -61,27 +61,6 @@ def get_all_users(*args):
         return response, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
-@users.route('/<user_id>', methods=['GET'])
-@Security.authenticate
-@Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.READ)])
-def get_user_by_id(*args, **kwargs):
-    try:
-        user_id = int(kwargs["user_id"])
-        user = UserService.get_user_by_id(user_id)
-        response = jsonify({'success': True, 'data': user.to_json()})
-        return response, HTTPStatus.OK
-    except NotFoundException as ex:
-        response = jsonify({'message': ex.message, 'success': False})
-        return response, ex.error_code
-    except ValueError:
-        return jsonify({'message': "User id must be an integer", 'success': False})
-    except Exception as ex:
-        Logger.add_to_log("error", str(ex))
-        Logger.add_to_log("error", traceback.format_exc())
-        response = jsonify({'message': str(ex), 'success': False})
-        return response, HTTPStatus.INTERNAL_SERVER_ERROR
-
-
 @users.route('/', methods=['POST'])
 @Security.authenticate
 @Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.WRITE)])
@@ -118,6 +97,27 @@ def add_user(*args):
         return response, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
+@users.route('/<user_id>', methods=['GET'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.READ)])
+def get_user_by_id(*args, **kwargs):
+    try:
+        user_id = int(kwargs["user_id"])
+        user = UserService.get_user_by_id(user_id)
+        response = jsonify({'success': True, 'data': user.to_json()})
+        return response, HTTPStatus.OK
+    except NotFoundException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except ValueError:
+        return jsonify({'message': "User id must be an integer", 'success': False})
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
 @users.route('/<user_id>', methods=['DELETE'])
 @Security.authenticate
 @Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.WRITE)])
@@ -142,6 +142,7 @@ def delete_user(*args, **kwargs):
 @Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.WRITE)])
 def edit_user(*args, **kwargs):
     try:
+        print(request.json)
         user_id = int(kwargs["user_id"])
         _user = User(
             userId=user_id,
@@ -150,7 +151,7 @@ def edit_user(*args, **kwargs):
             name=request.json["name"],
             surname=request.json["surname"],
             email=request.json["email"],
-            image=None
+            image=request.json["image"]
         )
         response_message = UserService.update_user(_user)
         response = jsonify({'message': response_message, 'success': True})
@@ -189,6 +190,42 @@ def check_user_permissions(*args, **kwargs):
                 data.append({"id": permission_id, "name": permission_name, "type": [permission_type]})
         response = jsonify({'data': data, 'success': True})
         return response, HTTPStatus.OK
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@users.route('/<user_id>/change-password', methods=['PUT'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.WRITE)])
+def change_password(*args, **kwargs):
+    try:
+        user_id = int(kwargs["user_id"])
+        password = request.json["password"]
+
+        user = UserService.get_user_by_id(user_id)
+        if check_password_hash(user.password, password):
+            raise PasswordCoincidenceException('Password cannot be the same as the old one')
+        user.password = password
+        UserService.update_password(password, user_id)
+        if not sendPasswordEmail(user, 'Password Changed', 'passwordUpdateEmail.html'):
+            raise EmailSendException('Something went wrong sending the email')
+        response = jsonify({'message': 'Password updated successfully', 'success': True})
+        return response, HTTPStatus.OK
+    except EmailSendException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except PasswordCoincidenceException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except KeyError:
+        response = jsonify({'message': 'Bad body format', 'success': False})
+        return response, HTTPStatus.BAD_REQUEST
+    except NotFoundException as ex:
+        response = jsonify({'success': False, 'message': ex.message})
+        return response, ex.error_code
     except Exception as ex:
         Logger.add_to_log("error", str(ex))
         Logger.add_to_log("error", traceback.format_exc())
@@ -270,37 +307,3 @@ def import_users_csv(*args):
         return response, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
-@users.route('/<user_id>/change-password', methods=['PUT'])
-@Security.authenticate
-@Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.WRITE)])
-def change_password(*args, **kwargs):
-    try:
-        user_id = int(kwargs["user_id"])
-        password = request.json["password"]
-
-        user = UserService.get_user_by_id(user_id)
-        if check_password_hash(user.password, password):
-            raise PasswordCoincidenceException('Password cannot be the same as the old one')
-        user.password = password
-        UserService.update_password(password, user_id)
-        if not sendPasswordEmail(user, 'Password Changed', 'passwordUpdateEmail.html'):
-            raise EmailSendException('Something went wrong sending the email')
-        response = jsonify({'message': 'Password updated successfully', 'success': True})
-        return response, HTTPStatus.OK
-    except EmailSendException as ex:
-        response = jsonify({'message': ex.message, 'success': False})
-        return response, ex.error_code
-    except PasswordCoincidenceException as ex:
-        response = jsonify({'message': ex.message, 'success': False})
-        return response, ex.error_code
-    except KeyError:
-        response = jsonify({'message': 'Bad body format', 'success': False})
-        return response, HTTPStatus.BAD_REQUEST
-    except NotFoundException as ex:
-        response = jsonify({'success': False, 'message': ex.message})
-        return response, ex.error_code
-    except Exception as ex:
-        Logger.add_to_log("error", str(ex))
-        Logger.add_to_log("error", traceback.format_exc())
-        response = jsonify({'message': str(ex), 'success': False})
-        return response, HTTPStatus.INTERNAL_SERVER_ERROR

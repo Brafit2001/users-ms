@@ -6,6 +6,6 @@ class Role:
 
     def to_json(self) -> dict:
         return {
-            "idRole": self.id,
+            "id": self.id,
             "name": self.name
         }

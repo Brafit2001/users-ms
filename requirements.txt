@@ -10,3 +10,5 @@ python-decouple
 Werkzeug
 instagrapi
 Pillow
+flask-cors
+mysql-connector

@@ -23,6 +23,7 @@ class UserService:
             with (connection_dbusers.cursor()) as cursor_dbusers:
                 query = "select * from users"
                 query = params.add_to_query(query)
+                Logger.add_to_log('info', query)
                 cursor_dbusers.execute(query)
                 result_set = cursor_dbusers.fetchall()
                 if not result_set:
@@ -144,12 +145,13 @@ class UserService:
             cls.get_user_by_id(user.id)
             connection_dbusers = get_connection('dbusers')
             with (connection_dbusers.cursor()) as cursor_dbusers:
-                query = ("update users set username = '{}', name = '{}' ,surname = '{}', email = '{}' "
+                query = ("update users set username = '{}', name = '{}' ,surname = '{}', email = '{}', image = '{}'"
                          "where id = '{}'").format(
                     user.username,
                     user.name,
                     user.surname,
                     user.email,
+                    user.image,
                     user.id
                 )
                 cursor_dbusers.execute(query)
