@@ -9,3 +9,10 @@ class Role:
             "id": self.id,
             "name": self.name
         }
+
+
+def row_to_role(row) -> Role:
+    return Role(
+        idRole=row[0],
+        name=row[1]
+    )

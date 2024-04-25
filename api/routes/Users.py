@@ -28,7 +28,7 @@ from api.utils.QueryParameters import QueryParameters
 from api.utils.Security import Security
 
 users = Blueprint('users_blueprint', __name__)
-GROUP_HOST = "http://localhost:8083"
+GROUP_HOST = "http://groups-ms:8083"
 
 
 # EJEMPLO SWAGGER
@@ -118,6 +118,54 @@ def get_user_by_id(*args, **kwargs):
         return response, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
+@users.route('/<user_id>/roles', methods=['GET'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.READ)])
+def get_user_roles(*args, **kwargs):
+    try:
+        user_id = int(kwargs["user_id"])
+        roles_list = UserService.get_user_roles(user_id)
+        response_roles= []
+        for role in roles_list:
+            response_roles.append(role.to_json())
+        response = jsonify({'success': True, 'data': response_roles})
+        return response, HTTPStatus.OK
+    except NotFoundException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except ValueError:
+        return jsonify({'message': "User id must be an integer", 'success': False})
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@users.route('/<user_id>/groups', methods=['GET'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.READ)])
+def get_user_groups(*args, **kwargs):
+    try:
+        user_id = int(kwargs["user_id"])
+        groups_list = UserService.get_user_groups(user_id)
+        response_groups = []
+        for group in groups_list:
+            response_groups.append(group.to_json())
+        response = jsonify({'success': True, 'data': response_groups})
+        return response, HTTPStatus.OK
+    except NotFoundException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except ValueError:
+        return jsonify({'message': "User id must be an integer", 'success': False})
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
 @users.route('/<user_id>', methods=['DELETE'])
 @Security.authenticate
 @Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.WRITE)])
@@ -136,6 +184,49 @@ def delete_user(*args, **kwargs):
         response = jsonify({'message': str(ex), 'success': False})
         return response, HTTPStatus.INTERNAL_SERVER_ERROR
 
+
+@users.route('/<user_id>/roles/<role_id>', methods=['DELETE'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.WRITE)])
+def delete_user_role(*args, **kwargs):
+    try:
+        user_id = int(kwargs["user_id"])
+        role_id = int(kwargs["role_id"])
+        response_message = UserService.delete_user_role(userId=user_id, roleId=role_id)
+        response = jsonify({'message': response_message, 'success': True})
+        return response, HTTPStatus.OK
+    except NotFoundException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except ValueError:
+        return jsonify({'message': "User and Role id must be an integer", 'success': False})
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@users.route('/<user_id>/groups/<group_id>', methods=['DELETE'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.WRITE)])
+def delete_user_group(*args, **kwargs):
+    try:
+        user_id = int(kwargs["user_id"])
+        group_id = int(kwargs["group_id"])
+        response_message = UserService.delete_user_group(userId=user_id, groupId=group_id)
+        response = jsonify({'message': response_message, 'success': True})
+        return response, HTTPStatus.OK
+    except NotFoundException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except ValueError:
+        return jsonify({'message': "User and Group id must be an integer", 'success': False})
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
 
 @users.route('/<user_id>', methods=['PUT'])
 @Security.authenticate
@@ -233,22 +324,58 @@ def change_password(*args, **kwargs):
         return response, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
+@users.route('/<user_id>/reset-password', methods=['PUT'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.WRITE)])
+def reset_password(*args, **kwargs):
+    try:
+        user_id = int(kwargs["user_id"])
+        password = ''.join(random.choices(string.ascii_lowercase + string.ascii_uppercase +
+                                          string.digits, k=6))
+
+        user = UserService.get_user_by_id(user_id)
+        user.password = password
+        UserService.update_password(password, user_id)
+        if not sendPasswordEmail(user, 'Password Changed', 'passwordUpdateEmail.html'):
+            raise EmailSendException('Something went wrong sending the email')
+        response = jsonify({'message': 'Password updated successfully', 'success': True})
+        return response, HTTPStatus.OK
+    except EmailSendException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except PasswordCoincidenceException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except KeyError:
+        response = jsonify({'message': 'Bad body format', 'success': False})
+        return response, HTTPStatus.BAD_REQUEST
+    except NotFoundException as ex:
+        response = jsonify({'success': False, 'message': ex.message})
+        return response, ex.error_code
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
 @users.route('/import-csv', methods=['POST'])
 @Security.authenticate
 @Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.WRITE)])
 def import_users_csv(*args):
     columns = ["username", "name", "surname", "email", "group name", "class name", "subject name", "course name",
                "course year"]
-    # QUITAR IMAGE (METER GROUP)
     try:
         created = []
         failed = []
         token = args[1]
         headers = {"Authorization": token, "Content-Type": "application/json"}
         csv_file = request.files['import-csv-users']
+
         stream = io.StringIO(csv_file.stream.read().decode("UTF8"), newline=None)
         csv_input = csv.reader(stream)
         line_count = 0
+        Logger.add_to_log("info", 'IMPORTANDO..')
         for row in csv_input:
             if line_count == 0:
                 if row[0].split(';') != columns:
@@ -267,6 +394,7 @@ def import_users_csv(*args):
                 course_name = row_info[10]
                 course_year = row_info[11]
                 _user = row_to_user(row_info)
+                Logger.add_to_log("info", _user.to_json())
                 try:
                     # Obtenemos el id del grupo a partir de su información
                     group_id = requests.get(f'{GROUP_HOST}/groups/find-id-by-name?'
@@ -274,10 +402,18 @@ def import_users_csv(*args):
                                             f'&year={course_year}', headers=headers).json()["groupId"]
                     # Añadimos el usuario
                     user_id = UserService.add_user(_user).id
+                    # Enviamos el correo
+                    if not sendPasswordEmail(_user, 'Registration Confirmation', 'studentEmail.html'):
+                        UserService.delete_user(_user.id)
+                        raise EmailSendException("Email could not be send")
+                    Logger.add_to_log("info", user_id)
                     # Asignamos el usuario al grupo
                     UserService.assign_group(userId=user_id, groupId=group_id)
                     created.append(_user.username)
 
+                except EmailSendException as ex:
+                    response = jsonify({'message': ex.message, 'success': False})
+                    return response, ex.error_code
                 except KeyError:
                     response = {'user': _user.username, 'reason': 'Bad format'}
                     failed.append(response)
@@ -293,6 +429,8 @@ def import_users_csv(*args):
             line_count += 1
 
         response = jsonify({'message': 'Process Completed', 'created': created, 'failed': failed, 'success': True})
+        Logger.add_to_log("info", created)
+        Logger.add_to_log("info", failed)
         return response, HTTPStatus.OK
     except KeyError:
         response = jsonify({'message': 'Bad key file format - should be `import-csv-users`', 'success': False})
@@ -305,5 +443,3 @@ def import_users_csv(*args):
         Logger.add_to_log("error", traceback.format_exc())
         response = jsonify({'message': str(ex), 'success': False})
         return response, HTTPStatus.INTERNAL_SERVER_ERROR
-
-

@@ -64,6 +64,30 @@ def get_role_by_id(*args, **kwargs):
         return response, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
+@roles.route('/<role_id>/users', methods=['GET'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.ROLES_MANAGER, PermissionType.READ)])
+def get_role_users(*args, **kwargs):
+    try:
+        role_id = int(kwargs["role_id"])
+        users_list = RoleService.get_role_users(role_id)
+        response_users = []
+        for user in users_list:
+            response_users.append(user.to_json())
+        response = jsonify({'success': True, 'data': response_users})
+        return response, HTTPStatus.OK
+    except NotFoundException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except ValueError:
+        return jsonify({'message': "Role id must be an integer", 'success': False})
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
 @roles.route('/', methods=['POST'])
 @Security.authenticate
 @Security.authorize(permissions_required=[(PermissionName.ROLES_MANAGER, PermissionType.WRITE)])
@@ -98,6 +122,28 @@ def delete_role(*args, **kwargs):
     except NotFoundException as ex:
         response = jsonify({'success': False, 'message': ex.message})
         return response, ex.error_code
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@roles.route('/<role_id>/users/<user_id>', methods=['DELETE'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.ROLES_MANAGER, PermissionType.WRITE)])
+def delete_role_user(*args, **kwargs):
+    try:
+        role_id = int(kwargs["role_id"])
+        user_id = int(kwargs["user_id"])
+        response_message = RoleService.delete_role_user(roleId=role_id, userId=user_id)
+        response = jsonify({'message': response_message, 'success': True})
+        return response, HTTPStatus.OK
+    except NotFoundException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except ValueError:
+        return jsonify({'message': "Role and User id must be an integer", 'success': False})
     except Exception as ex:
         Logger.add_to_log("error", str(ex))
         Logger.add_to_log("error", traceback.format_exc())

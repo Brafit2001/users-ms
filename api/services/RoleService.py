@@ -3,7 +3,8 @@ import traceback
 import mariadb
 
 from api.database.db import get_connection
-from api.models.RoleModel import Role
+from api.models.RoleModel import Role, row_to_role
+from api.models.UserModel import User, row_to_user
 from api.utils.AppExceptions import EmptyDbException, NotFoundException
 from api.utils.Logger import Logger
 from api.utils.QueryParameters import QueryParameters
@@ -92,6 +93,23 @@ class RoleService:
             Logger.add_to_log("error", traceback.format_exc())
 
     @classmethod
+    def delete_role_user(cls, roleId: int, userId: int):
+        try:
+            connection_dbusers = get_connection('dbusers')
+            with (connection_dbusers.cursor()) as cursor_dbusers:
+                query = "delete from relationusersroles where `role` = '{}' and user = '{}'".format(roleId, userId)
+                cursor_dbusers.execute(query)
+                connection_dbusers.commit()
+            connection_dbusers.close()
+            return f'User {userId} from Role {roleId} has been deleted'
+        except NotFoundException:
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            raise
+
+    @classmethod
     def update_role(cls, role: Role):
         try:
             # Check if user exists
@@ -127,10 +145,27 @@ class RoleService:
             Logger.add_to_log("error", traceback.format_exc())
             raise
 
+    @classmethod
+    def get_role_users(cls, roleId: int) -> list[User]:
+        try:
+            connection_dbusers = get_connection('dbusers')
+            users_list = []
+            with connection_dbusers.cursor() as cursor_dbusers:
+                query = ("SELECT id, username, PASSWORD, NAME, surname, email, image FROM relationusersroles a "
+                         "INNER JOIN users b ON a.user = b.id WHERE ROLE = '{}'").format(roleId)
+                cursor_dbusers.execute(query)
+                result_set = cursor_dbusers.fetchall()
+                if not result_set:
+                    raise EmptyDbException("No users found")
+                for row in result_set:
+                    user = row_to_user(row)
+                    users_list.append(user)
+            connection_dbusers.close()
+            return users_list
+        except NotFoundException:
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            raise
 
-
-def row_to_role(row) -> Role:
-    return Role(
-        idRole=row[0],
-        name=row[1]
-    )

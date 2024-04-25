@@ -1,16 +1,20 @@
 import random
 import string
 import traceback
+from typing import List
 
 import mariadb
 from werkzeug.security import generate_password_hash
 
 from api.database.db import get_connection
+from api.models.GroupModel import row_to_group, Group
 from api.models.PermissionModel import row_to_permission
+from api.models.RoleModel import row_to_role, Role
 from api.models.UserModel import User, row_to_user
 from api.utils.AppExceptions import EmptyDbException, NotFoundException
 from api.utils.Logger import Logger
 from api.utils.QueryParameters import QueryParameters
+from api.services.RoleService import RoleService
 
 
 class UserService:
@@ -57,6 +61,54 @@ class UserService:
                     raise NotFoundException("User not found")
             connection_dbusers.close()
             return user
+        except NotFoundException:
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            raise
+
+    @classmethod
+    def get_user_roles(cls, userId: int) -> list[Role]:
+        try:
+            connection_dbusers = get_connection('dbusers')
+            roles_list = []
+            with connection_dbusers.cursor() as cursor_dbusers:
+                query = ("SELECT id, name FROM relationusersroles a INNER JOIN roles b ON a.role = b.id WHERE USER = "
+                         "'{}'").format(userId)
+                cursor_dbusers.execute(query)
+                result_set = cursor_dbusers.fetchall()
+                if not result_set:
+                    raise EmptyDbException("No roles found")
+                for row in result_set:
+                    role = row_to_role(row)
+                    roles_list.append(role)
+            connection_dbusers.close()
+            return roles_list
+        except NotFoundException:
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            raise
+
+    @classmethod
+    def get_user_groups(cls, userId: int) -> list[Group]:
+        try:
+            connection_dbgroups = get_connection('dbgroups')
+            groups_list = []
+            with connection_dbgroups.cursor() as cursor_dbgroups:
+                query = ("SELECT id, NAME, DESCRIPTION, class FROM relationusersgroups a INNER JOIN `groups` b ON "
+                         "a.group = b.id WHERE USER = '{}'").format(userId)
+                cursor_dbgroups.execute(query)
+                result_set = cursor_dbgroups.fetchall()
+                if not result_set:
+                    raise EmptyDbException("No roles found")
+                for row in result_set:
+                    group = row_to_group(row)
+                    groups_list.append(group)
+            connection_dbgroups.close()
+            return groups_list
         except NotFoundException:
             raise
         except Exception as ex:
@@ -131,6 +183,40 @@ class UserService:
                 connection_dbusers.commit()
             connection_dbusers.close()
             return f'User {userId} deleted'
+        except NotFoundException:
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            raise
+
+    @classmethod
+    def delete_user_role(cls, userId: int, roleId: int):
+        try:
+            connection_dbusers = get_connection('dbusers')
+            with (connection_dbusers.cursor()) as cursor_dbusers:
+                query = "delete from relationusersroles where role = '{}' and user = '{}'".format(roleId, userId)
+                cursor_dbusers.execute(query)
+                connection_dbusers.commit()
+            connection_dbusers.close()
+            return f'Role {roleId} from User {userId} has been deleted'
+        except NotFoundException:
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            raise
+
+    @classmethod
+    def delete_user_group(cls, userId: int, groupId: int):
+        try:
+            connection_dbgroups = get_connection('dbgroups')
+            with (connection_dbgroups.cursor()) as cursor_dbgroups:
+                query = "delete from relationusersgroups where `group` = '{}' and user = '{}'".format(groupId, userId)
+                cursor_dbgroups.execute(query)
+                connection_dbgroups.commit()
+            connection_dbgroups.close()
+            return f'Group {groupId} from User {userId} has been deleted'
         except NotFoundException:
             raise
         except Exception as ex:
