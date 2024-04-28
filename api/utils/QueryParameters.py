@@ -5,6 +5,7 @@ class QueryParameters:
         self.username = request.args.get("username")
         self.name = request.args.get("name")
         self.email = request.args.get("email")
+        self.permissionType = request.args.get("type")
 
     def add_to_query(self, query: str):
         for param in self.__dict__:

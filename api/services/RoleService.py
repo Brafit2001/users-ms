@@ -3,6 +3,7 @@ import traceback
 import mariadb
 
 from api.database.db import get_connection
+from api.models.PermissionModel import Permission, row_to_permission, PermissionType
 from api.models.RoleModel import Role, row_to_role
 from api.models.UserModel import User, row_to_user
 from api.utils.AppExceptions import EmptyDbException, NotFoundException
@@ -110,6 +111,26 @@ class RoleService:
             raise
 
     @classmethod
+    def delete_role_permission(cls, roleId: int, permissionId: int, permissionType: PermissionType):
+        try:
+            connection_dbusers = get_connection('dbusers')
+            with (connection_dbusers.cursor()) as cursor_dbusers:
+                query = ("delete from relationrolespermissions "
+                         "where `role` = '{}' "
+                         "and permission = '{}' "
+                         "and permission_type = '{}' ").format(roleId, permissionId, permissionType.value)
+                cursor_dbusers.execute(query)
+                connection_dbusers.commit()
+            connection_dbusers.close()
+            return f'Permission {permissionId} from Role {roleId} has been deleted'
+        except NotFoundException:
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            raise
+
+    @classmethod
     def update_role(cls, role: Role):
         try:
             # Check if user exists
@@ -169,3 +190,26 @@ class RoleService:
             Logger.add_to_log("error", traceback.format_exc())
             raise
 
+    @classmethod
+    def get_role_permissions(cls, roleId: int) -> list[Permission]:
+        try:
+            connection_dbusers = get_connection('dbusers')
+            permissions_list = []
+            with connection_dbusers.cursor() as cursor_dbusers:
+                query = ("SELECT id, permission_type FROM relationrolespermissions a "
+                         "INNER JOIN permissions b ON a.permission = b.id WHERE ROLE = '{}'").format(roleId)
+                cursor_dbusers.execute(query)
+                result_set = cursor_dbusers.fetchall()
+                if not result_set:
+                    raise EmptyDbException("No permissions found")
+                for row in result_set:
+                    permission = row_to_permission(row)
+                    permissions_list.append(permission)
+            connection_dbusers.close()
+            return permissions_list
+        except NotFoundException:
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            raise

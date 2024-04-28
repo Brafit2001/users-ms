@@ -76,6 +76,36 @@ def get_role_users(*args, **kwargs):
             response_users.append(user.to_json())
         response = jsonify({'success': True, 'data': response_users})
         return response, HTTPStatus.OK
+    except EmptyDbException as ex:
+        response = jsonify({'success': False, 'message': ex.message})
+        return response, ex.error_code
+    except NotFoundException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except ValueError:
+        return jsonify({'message': "Role id must be an integer", 'success': False})
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@roles.route('/<role_id>/permissions', methods=['GET'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.ROLES_MANAGER, PermissionType.READ)])
+def get_role_permissions(*args, **kwargs):
+    try:
+        role_id = int(kwargs["role_id"])
+        permissions_list = RoleService.get_role_permissions(role_id)
+        response_permissions = []
+        for permission in permissions_list:
+            response_permissions.append(permission.to_json())
+        response = jsonify({'success': True, 'data': response_permissions})
+        return response, HTTPStatus.OK
+    except EmptyDbException as ex:
+        response = jsonify({'success': False, 'message': ex.message})
+        return response, ex.error_code
     except NotFoundException as ex:
         response = jsonify({'message': ex.message, 'success': False})
         return response, ex.error_code
@@ -144,6 +174,35 @@ def delete_role_user(*args, **kwargs):
         return response, ex.error_code
     except ValueError:
         return jsonify({'message': "Role and User id must be an integer", 'success': False})
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@roles.route('/<role_id>/permissions/<permission_id>', methods=['DELETE'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.ROLES_MANAGER, PermissionType.WRITE)])
+def delete_role_permission(*args, **kwargs):
+    try:
+        permission_type = PermissionType(int(request.args.get("type")))
+        role_id = int(kwargs["role_id"])
+        permission_id = int(kwargs["permission_id"])
+        Logger.add_to_log("info", role_id)
+        response_message = RoleService.delete_role_permission(roleId=role_id,
+                                                              permissionId=permission_id,
+                                                              permissionType=permission_type)
+        response = jsonify({'message': response_message, 'success': True})
+        return response, HTTPStatus.OK
+    except KeyError:
+        response = jsonify({'message': 'Bad body format', 'success': False})
+        return response, HTTPStatus.BAD_REQUEST
+    except NotFoundException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except ValueError:
+        return jsonify({'message': "Role and Permission id must be an integer", 'success': False})
     except Exception as ex:
         Logger.add_to_log("error", str(ex))
         Logger.add_to_log("error", traceback.format_exc())

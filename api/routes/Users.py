@@ -130,6 +130,9 @@ def get_user_roles(*args, **kwargs):
             response_roles.append(role.to_json())
         response = jsonify({'success': True, 'data': response_roles})
         return response, HTTPStatus.OK
+    except EmptyDbException as ex:
+        response = jsonify({'success': False, 'message': ex.message})
+        return response, ex.error_code
     except NotFoundException as ex:
         response = jsonify({'message': ex.message, 'success': False})
         return response, ex.error_code
@@ -154,6 +157,9 @@ def get_user_groups(*args, **kwargs):
             response_groups.append(group.to_json())
         response = jsonify({'success': True, 'data': response_groups})
         return response, HTTPStatus.OK
+    except EmptyDbException as ex:
+        response = jsonify({'success': False, 'message': ex.message})
+        return response, ex.error_code
     except NotFoundException as ex:
         response = jsonify({'message': ex.message, 'success': False})
         return response, ex.error_code
