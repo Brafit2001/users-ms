@@ -1,19 +1,14 @@
-import io
-import random
 import csv
-import smtplib
-import ssl
+import io
 import string
 import traceback
-from email.message import EmailMessage
-from email.utils import formataddr
 from http import HTTPStatus
+import random
+import imghdr
 
 import mariadb
 import requests
-from decouple import config
-from flask import Blueprint, jsonify, request, render_template
-from flask_cors import cross_origin
+from flask import Blueprint, jsonify, request
 from werkzeug.security import check_password_hash
 
 from api.models.PermissionModel import PermissionName, PermissionType
@@ -23,12 +18,15 @@ from api.services.UserService import UserService
 from api.utils.AppExceptions import EmptyDbException, NotFoundException, BadCsvFormatException, EmailSendException, \
     PasswordCoincidenceException
 from api.utils.EmailSend import sendPasswordEmail
+from api.utils.FirebaseFunctions import readFirebase, uploadFirebase, deleteFirebase
 from api.utils.Logger import Logger
 from api.utils.QueryParameters import QueryParameters
 from api.utils.Security import Security
 
 users = Blueprint('users_blueprint', __name__)
 GROUP_HOST = "http://groups-ms:8083"
+
+PROFILE_IMAGES = ["user1", "user2", "user3", "user4"]
 
 
 # EJEMPLO SWAGGER
@@ -43,6 +41,8 @@ def get_all_users(*args):
         users_list = UserService.get_all_users(params)
         response_users = []
         for user in users_list:
+            if user.image not in PROFILE_IMAGES:
+                user.image = readFirebase("images/users/%s" % user.image)
             response_users.append(user.to_json())
         response = jsonify({'success': True, 'data': response_users})
         response.headers.set('Access-Control-Allow-Origin', '*')
@@ -73,7 +73,7 @@ def add_user(*args):
         email = request.json["email"]
         _user = User(userId=0, username=username, password="",
                      name=name, surname=surname, email=email,
-                     image=None)
+                     image=random.choice(PROFILE_IMAGES))
         _user = UserService.add_user(_user)
         if not sendPasswordEmail(_user, 'Registration Confirmation', 'studentEmail.html'):
             UserService.delete_user(_user.id)
@@ -104,12 +104,16 @@ def get_user_by_id(*args, **kwargs):
     try:
         user_id = int(kwargs["user_id"])
         user = UserService.get_user_by_id(user_id)
+        # Nos conectamos a nuestra File Storage y buscamos el archivo
+        if user.image not in PROFILE_IMAGES:
+            user.image = readFirebase("images/users/%s" % user.image)
         response = jsonify({'success': True, 'data': user.to_json()})
         return response, HTTPStatus.OK
     except NotFoundException as ex:
         response = jsonify({'message': ex.message, 'success': False})
         return response, ex.error_code
-    except ValueError:
+    except ValueError as ex:
+        Logger.add_to_log("error", str(ex))
         return jsonify({'message': "User id must be an integer", 'success': False})
     except Exception as ex:
         Logger.add_to_log("error", str(ex))
@@ -125,7 +129,7 @@ def get_user_roles(*args, **kwargs):
     try:
         user_id = int(kwargs["user_id"])
         roles_list = UserService.get_user_roles(user_id)
-        response_roles= []
+        response_roles = []
         for role in roles_list:
             response_roles.append(role.to_json())
         response = jsonify({'success': True, 'data': response_roles})
@@ -234,23 +238,44 @@ def delete_user_group(*args, **kwargs):
         response = jsonify({'message': str(ex), 'success': False})
         return response, HTTPStatus.INTERNAL_SERVER_ERROR
 
+
 @users.route('/<user_id>', methods=['PUT'])
 @Security.authenticate
 @Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.WRITE)])
 def edit_user(*args, **kwargs):
     try:
-        print(request.json)
+        Logger.add_to_log("info", request.form)
         user_id = int(kwargs["user_id"])
+        image = ""
+        if len(request.files) > 0:
+            image = request.files['image']
+            image_name = ''.join(random.choices(string.ascii_lowercase + string.ascii_uppercase +
+                                                string.digits, k=64))
+            file_type = image.filename.split('.')[-1]
+            image_name += '.' + file_type
+        else:
+            image_name = request.form['image']
+
         _user = User(
             userId=user_id,
-            username=request.json["username"],
+            username=request.form["username"],
             password="",
-            name=request.json["name"],
-            surname=request.json["surname"],
-            email=request.json["email"],
-            image=request.json["image"]
+            name=request.form["name"],
+            surname=request.form["surname"],
+            email=request.form["email"],
+            image=image_name
         )
+
+        oldUser = UserService.get_user_by_id(user_id)
         response_message = UserService.update_user(_user)
+
+        # Si la imagen ha cambiado la eliminamos y añadimos la nueva a Firebase
+        # (en caso de que no sean las imagenes por defecto).
+        if oldUser.image != _user.image:
+            deleteFirebase("images/users/%s" % oldUser.image)
+            if _user.image not in PROFILE_IMAGES:
+                uploadFirebase(image=image, path="images/users/%s" % image_name)
+
         response = jsonify({'message': response_message, 'success': True})
         return response, HTTPStatus.OK
     except KeyError:
@@ -381,7 +406,6 @@ def import_users_csv(*args):
         stream = io.StringIO(csv_file.stream.read().decode("UTF8"), newline=None)
         csv_input = csv.reader(stream)
         line_count = 0
-        Logger.add_to_log("info", 'IMPORTANDO..')
         for row in csv_input:
             if line_count == 0:
                 if row[0].split(';') != columns:
@@ -400,7 +424,6 @@ def import_users_csv(*args):
                 course_name = row_info[10]
                 course_year = row_info[11]
                 _user = row_to_user(row_info)
-                Logger.add_to_log("info", _user.to_json())
                 try:
                     # Obtenemos el id del grupo a partir de su información
                     group_id = requests.get(f'{GROUP_HOST}/groups/find-id-by-name?'
@@ -412,7 +435,6 @@ def import_users_csv(*args):
                     if not sendPasswordEmail(_user, 'Registration Confirmation', 'studentEmail.html'):
                         UserService.delete_user(_user.id)
                         raise EmailSendException("Email could not be send")
-                    Logger.add_to_log("info", user_id)
                     # Asignamos el usuario al grupo
                     UserService.assign_group(userId=user_id, groupId=group_id)
                     created.append(_user.username)
@@ -435,8 +457,6 @@ def import_users_csv(*args):
             line_count += 1
 
         response = jsonify({'message': 'Process Completed', 'created': created, 'failed': failed, 'success': True})
-        Logger.add_to_log("info", created)
-        Logger.add_to_log("info", failed)
         return response, HTTPStatus.OK
     except KeyError:
         response = jsonify({'message': 'Bad key file format - should be `import-csv-users`', 'success': False})

@@ -27,7 +27,6 @@ class UserService:
             with (connection_dbusers.cursor()) as cursor_dbusers:
                 query = "select * from users"
                 query = params.add_to_query(query)
-                Logger.add_to_log('info', query)
                 cursor_dbusers.execute(query)
                 result_set = cursor_dbusers.fetchall()
                 if not result_set:
@@ -147,16 +146,17 @@ class UserService:
             user.password = password
             with (connection_dbusers.cursor()) as cursor_dbusers:
                 query = ("insert into users set username = '{}',password = '{}', name = '{}' ,surname = '{}', "
-                         "email = '{}'").format(
+                         "email = '{}', image = '{}'").format(
                     user.username,
                     generate_password_hash(user.password),
                     user.name,
                     user.surname,
-                    user.email
+                    user.email,
+                    user.image
                 )
                 cursor_dbusers.execute(query)
                 connection_dbusers.commit()
-
+                # Obtenemos la id creada por la bbdd para devolverla
                 query = "select * from users where username = '{}'".format(user.username)
                 cursor_dbusers.execute(query)
                 user.id = cursor_dbusers.fetchone()[0]

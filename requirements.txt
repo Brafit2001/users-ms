@@ -12,3 +12,4 @@ instagrapi
 Pillow
 flask-cors
 mysql-connector
+firebase-admin
