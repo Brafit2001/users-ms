@@ -149,6 +149,33 @@ def get_user_roles(*args, **kwargs):
         return response, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
+@users.route('/<user_id>/roles-remaining', methods=['GET'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.READ)])
+def get_user_remaining_roles(*args, **kwargs):
+    try:
+        user_id = int(kwargs["user_id"])
+        roles_list = UserService.get_user_remaining_roles(user_id)
+        response_roles = []
+        for role in roles_list:
+            response_roles.append(role.to_json())
+        response = jsonify({'success': True, 'data': response_roles})
+        return response, HTTPStatus.OK
+    except EmptyDbException as ex:
+        response = jsonify({'success': False, 'message': ex.message})
+        return response, ex.error_code
+    except NotFoundException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except ValueError:
+        return jsonify({'message': "User id must be an integer", 'success': False})
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
 @users.route('/<user_id>/groups', methods=['GET'])
 @Security.authenticate
 @Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.READ)])
@@ -176,13 +203,43 @@ def get_user_groups(*args, **kwargs):
         return response, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
+@users.route('/<user_id>/groups-remaining', methods=['GET'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.READ)])
+def get_user_remaining_groups(*args, **kwargs):
+    try:
+        user_id = int(kwargs["user_id"])
+        groups_list = UserService.get_user_remaining_groups(user_id)
+        response_groups = []
+        for group in groups_list:
+            response_groups.append(group.to_json())
+        response = jsonify({'success': True, 'data': response_groups})
+        return response, HTTPStatus.OK
+    except EmptyDbException as ex:
+        response = jsonify({'success': False, 'message': ex.message})
+        return response, ex.error_code
+    except NotFoundException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except ValueError:
+        return jsonify({'message': "User id must be an integer", 'success': False})
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
 @users.route('/<user_id>', methods=['DELETE'])
 @Security.authenticate
 @Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.WRITE)])
 def delete_user(*args, **kwargs):
     try:
         user_id = int(kwargs["user_id"])
+        user_to_delete = UserService.get_user_by_id(user_id)
         response_message = UserService.delete_user(user_id)
+        if user_to_delete.image not in PROFILE_IMAGES:
+            deleteFirebase("images/users/%s" % user_to_delete.image)
         response = jsonify({'message': response_message, 'success': True})
         return response, HTTPStatus.OK
     except NotFoundException as ex:

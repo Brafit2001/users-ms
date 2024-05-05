@@ -50,7 +50,8 @@ def get_role_by_id(*args, **kwargs):
     try:
         role_id = int(kwargs["role_id"])
         role = RoleService.get_role_by_id(role_id)
-        return role.to_json(), HTTPStatus.OK
+        response = jsonify({'success': True, 'data': role.to_json()})
+        return response, HTTPStatus.OK
 
     except NotFoundException as ex:
         response = jsonify({'message': ex.message, 'success': False})
@@ -91,6 +92,33 @@ def get_role_users(*args, **kwargs):
         return response, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
+@roles.route('/<role_id>/users-remaining', methods=['GET'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.ROLES_MANAGER, PermissionType.READ)])
+def get_role_remaining_users(*args, **kwargs):
+    try:
+        role_id = int(kwargs["role_id"])
+        users_list = RoleService.get_role_remaining_users(role_id)
+        response_users = []
+        for user in users_list:
+            response_users.append(user.to_json())
+        response = jsonify({'success': True, 'data': response_users})
+        return response, HTTPStatus.OK
+    except EmptyDbException as ex:
+        response = jsonify({'success': False, 'message': ex.message})
+        return response, ex.error_code
+    except NotFoundException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except ValueError:
+        return jsonify({'message': "Role id must be an integer", 'success': False})
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
 @roles.route('/<role_id>/permissions', methods=['GET'])
 @Security.authenticate
 @Security.authorize(permissions_required=[(PermissionName.ROLES_MANAGER, PermissionType.READ)])
@@ -98,6 +126,33 @@ def get_role_permissions(*args, **kwargs):
     try:
         role_id = int(kwargs["role_id"])
         permissions_list = RoleService.get_role_permissions(role_id)
+        response_permissions = []
+        for permission in permissions_list:
+            response_permissions.append(permission.to_json())
+        response = jsonify({'success': True, 'data': response_permissions})
+        return response, HTTPStatus.OK
+    except EmptyDbException as ex:
+        response = jsonify({'success': False, 'message': ex.message})
+        return response, ex.error_code
+    except NotFoundException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except ValueError:
+        return jsonify({'message': "Role id must be an integer", 'success': False})
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@roles.route('/<role_id>/permissions-remaining', methods=['GET'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.ROLES_MANAGER, PermissionType.READ)])
+def get_role_remaining_permissions(*args, **kwargs):
+    try:
+        role_id = int(kwargs["role_id"])
+        permissions_list = RoleService.get_role_remaining_permissions(role_id)
         response_permissions = []
         for permission in permissions_list:
             response_permissions.append(permission.to_json())

@@ -191,6 +191,32 @@ class RoleService:
             raise
 
     @classmethod
+    def get_role_remaining_users(cls, roleId: int) -> list[User]:
+        try:
+            connection_dbusers = get_connection('dbusers')
+            users_list = []
+            with connection_dbusers.cursor() as cursor_dbusers:
+                query = ("SELECT c.id, c.username, c.PASSWORD, c.NAME, c.surname, c.email, c.image FROM users c "
+                         "LEFT JOIN (SELECT id, username, PASSWORD, NAME, surname, email, image "
+                         "FROM relationusersroles a INNER JOIN users b ON a.user = b.id WHERE ROLE = '{}')"
+                         "d ON c.id = d.id WHERE d.id IS NULL").format(roleId)
+                cursor_dbusers.execute(query)
+                result_set = cursor_dbusers.fetchall()
+                if not result_set:
+                    raise EmptyDbException("No users found")
+                for row in result_set:
+                    user = row_to_user(row)
+                    users_list.append(user)
+            connection_dbusers.close()
+            return users_list
+        except NotFoundException:
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            raise
+
+    @classmethod
     def get_role_permissions(cls, roleId: int) -> list[Permission]:
         try:
             connection_dbusers = get_connection('dbusers')
@@ -204,6 +230,38 @@ class RoleService:
                     raise EmptyDbException("No permissions found")
                 for row in result_set:
                     permission = row_to_permission(row)
+                    permissions_list.append(permission)
+            connection_dbusers.close()
+            return permissions_list
+        except NotFoundException:
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            raise
+
+    @classmethod
+    def get_role_remaining_permissions(cls, roleId: int) -> list[Permission]:
+        try:
+            connection_dbusers = get_connection('dbusers')
+            permissions_list = []
+            with connection_dbusers.cursor() as cursor_dbusers:
+                query = ("SELECT c.id FROM permissions c "
+                         "LEFT JOIN(SELECT id, permission_type FROM relationrolespermissions a "
+                         "INNER JOIN permissions b ON a.permission = b.id WHERE ROLE = '{}')"
+                         "d ON c.id = d.id WHERE d.id IS NULL").format(roleId)
+                cursor_dbusers.execute(query)
+                result_set = cursor_dbusers.fetchall()
+                if not result_set:
+                    raise EmptyDbException("No permissions found")
+                for row in result_set:
+                    # READ
+                    aux1 = (row[0], 0)
+                    permission = row_to_permission(aux1)
+                    permissions_list.append(permission)
+                    # WRITE
+                    aux2 = (row[0], 1)
+                    permission = row_to_permission(aux2)
                     permissions_list.append(permission)
             connection_dbusers.close()
             return permissions_list

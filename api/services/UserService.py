@@ -92,6 +92,32 @@ class UserService:
             raise
 
     @classmethod
+    def get_user_remaining_roles(cls, userId: int) -> list[Role]:
+        try:
+            connection_dbusers = get_connection('dbusers')
+            roles_list = []
+            with connection_dbusers.cursor() as cursor_dbusers:
+                query = ("SELECT c.id, c.name FROM roles c LEFT JOIN "
+                         "(SELECT id, name FROM relationusersroles a "
+                         "INNER JOIN roles b ON a.role = b.id WHERE USER = '{}') "
+                         "d ON c.id = d.id WHERE d.id IS null").format(userId)
+                cursor_dbusers.execute(query)
+                result_set = cursor_dbusers.fetchall()
+                if not result_set:
+                    raise EmptyDbException("No roles found")
+                for row in result_set:
+                    role = row_to_role(row)
+                    roles_list.append(role)
+            connection_dbusers.close()
+            return roles_list
+        except NotFoundException:
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            raise
+
+    @classmethod
     def get_user_groups(cls, userId: int) -> list[Group]:
         try:
             connection_dbgroups = get_connection('dbgroups')
@@ -102,7 +128,7 @@ class UserService:
                 cursor_dbgroups.execute(query)
                 result_set = cursor_dbgroups.fetchall()
                 if not result_set:
-                    raise EmptyDbException("No roles found")
+                    raise EmptyDbException("No groups found")
                 for row in result_set:
                     group = row_to_group(row)
                     groups_list.append(group)
@@ -114,6 +140,33 @@ class UserService:
             Logger.add_to_log("error", str(ex))
             Logger.add_to_log("error", traceback.format_exc())
             raise
+
+    @classmethod
+    def get_user_remaining_groups(cls, userId: int) -> list[Group]:
+        try:
+            connection_dbgroups = get_connection('dbgroups')
+            groups_list = []
+            with connection_dbgroups.cursor() as cursor_dbgroups:
+                query = ("SELECT c.id, c.NAME, c.DESCRIPTION, c.class FROM `groups` c "
+                         "LEFT JOIN(SELECT id, NAME, DESCRIPTION, class FROM relationusersgroups a "
+                         "INNER JOIN `groups` b ON a.group = b.id WHERE USER = '{}') "
+                         "d ON c.id = d.id WHERE d.id IS NULL").format(userId)
+                cursor_dbgroups.execute(query)
+                result_set = cursor_dbgroups.fetchall()
+                if not result_set:
+                    raise EmptyDbException("No groups found")
+                for row in result_set:
+                    group = row_to_group(row)
+                    groups_list.append(group)
+            connection_dbgroups.close()
+            return groups_list
+        except NotFoundException:
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            raise
+
 
     @classmethod
     def get_user_by_username(cls, username: str) -> User:
