@@ -176,6 +176,87 @@ def get_user_remaining_roles(*args, **kwargs):
         return response, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
+@users.route('/<user_id>/courses', methods=['GET'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.READ)])
+def get_user_courses(*args, **kwargs):
+    try:
+        user_id = int(kwargs["user_id"])
+        courses_list = UserService.get_user_courses(user_id)
+        response_courses = []
+        for course in courses_list:
+            response_courses.append(course.to_json())
+        response = jsonify({'success': True, 'data': response_courses})
+        return response, HTTPStatus.OK
+    except EmptyDbException as ex:
+        response = jsonify({'success': False, 'message': ex.message})
+        return response, ex.error_code
+    except NotFoundException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except ValueError:
+        return jsonify({'message': "User id must be an integer", 'success': False})
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@users.route('/<user_id>/subjects', methods=['GET'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.READ)])
+def get_user_subjects(*args, **kwargs):
+    try:
+        user_id = int(kwargs["user_id"])
+        subjects_list = UserService.get_user_subjects(user_id)
+        response_subjects = []
+        for subject in subjects_list:
+            response_subjects.append(subject.to_json())
+        response = jsonify({'success': True, 'data': response_subjects})
+        return response, HTTPStatus.OK
+    except EmptyDbException as ex:
+        response = jsonify({'success': False, 'message': ex.message})
+        return response, ex.error_code
+    except NotFoundException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except ValueError:
+        return jsonify({'message': "User id must be an integer", 'success': False})
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@users.route('/<user_id>/classes', methods=['GET'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.READ)])
+def get_user_classes(*args, **kwargs):
+    try:
+        user_id = int(kwargs["user_id"])
+        classes_list = UserService.get_user_classes(user_id)
+        response_classes = []
+        for classItem in classes_list:
+            response_classes.append(classItem.to_json())
+        response = jsonify({'success': True, 'data': response_classes})
+        return response, HTTPStatus.OK
+    except EmptyDbException as ex:
+        response = jsonify({'success': False, 'message': ex.message})
+        return response, ex.error_code
+    except NotFoundException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except ValueError:
+        return jsonify({'message': "User id must be an integer", 'success': False})
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
 @users.route('/<user_id>/groups', methods=['GET'])
 @Security.authenticate
 @Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.READ)])
@@ -187,6 +268,33 @@ def get_user_groups(*args, **kwargs):
         for group in groups_list:
             response_groups.append(group.to_json())
         response = jsonify({'success': True, 'data': response_groups})
+        return response, HTTPStatus.OK
+    except EmptyDbException as ex:
+        response = jsonify({'success': False, 'message': ex.message})
+        return response, ex.error_code
+    except NotFoundException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except ValueError:
+        return jsonify({'message': "User id must be an integer", 'success': False})
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@users.route('/<user_id>/topics', methods=['GET'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.READ)])
+def get_user_topics(*args, **kwargs):
+    try:
+        user_id = int(kwargs["user_id"])
+        topics_list = UserService.get_user_topics(user_id)
+        response_topics = []
+        for topic in topics_list:
+            response_topics.append(topic.to_json())
+        response = jsonify({'success': True, 'data': response_topics})
         return response, HTTPStatus.OK
     except EmptyDbException as ex:
         response = jsonify({'success': False, 'message': ex.message})
@@ -335,7 +443,9 @@ def edit_user(*args, **kwargs):
 
         response = jsonify({'message': response_message, 'success': True})
         return response, HTTPStatus.OK
-    except KeyError:
+    except KeyError as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
         response = jsonify({'message': 'Bad body format', 'success': False})
         return response, HTTPStatus.BAD_REQUEST
     except NotFoundException as ex:

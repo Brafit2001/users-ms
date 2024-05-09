@@ -157,9 +157,31 @@ class RoleService:
                 cursor_dbusers.execute(query)
                 connection_dbusers.commit()
             connection_dbusers.close()
-            return 'Role added to User'
+            return 'User added to role'
         except mariadb.IntegrityError:
             # User has already the role
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            raise
+
+    @classmethod
+    def assign_permission(cls, roleId: int, permissionType: int ,permissionId: int):
+        try:
+            connection_dbusers = get_connection('dbusers')
+            with (connection_dbusers.cursor()) as cursor_dbusers:
+                query = ("insert into relationrolespermissions "
+                         "set role = '{}', "
+                         "permission = '{}', permission_type = '{}'").format(roleId, permissionId, permissionType)
+                cursor_dbusers.execute(query)
+                connection_dbusers.commit()
+            connection_dbusers.close()
+            return 'Permission added to role'
+        except mariadb.IntegrityError as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            # Role has already the permission
             raise
         except Exception as ex:
             Logger.add_to_log("error", str(ex))

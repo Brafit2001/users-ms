@@ -7,9 +7,13 @@ import mariadb
 from werkzeug.security import generate_password_hash
 
 from api.database.db import get_connection
+from api.models import ClassModel
+from api.models.CourseModel import row_to_course, Course
 from api.models.GroupModel import row_to_group, Group
 from api.models.PermissionModel import row_to_permission
 from api.models.RoleModel import row_to_role, Role
+from api.models.SubjectModel import row_to_subject
+from api.models.TopicModel import Topic, row_to_topic
 from api.models.UserModel import User, row_to_user
 from api.utils.AppExceptions import EmptyDbException, NotFoundException
 from api.utils.Logger import Logger
@@ -118,6 +122,87 @@ class UserService:
             raise
 
     @classmethod
+    def get_user_courses(cls, userId: int) -> list[Course]:
+        try:
+            connection_dbgroups = get_connection('dbgroups')
+            courses_list = []
+            with connection_dbgroups.cursor() as cursor_dbgroups:
+                query = ("SELECT DISTINCT * FROM dbcourses.courses g "
+                         "INNER JOIN ( SELECT course FROM dbcourses.subjects e "
+                         "INNER JOIN(SELECT `subject` FROM dbcourses.classes c "
+                         "INNER JOIN(SELECT class FROM relationusersgroups a "
+                         "INNER JOIN `groups` b ON a.group = b.id WHERE USER = '{}') d "
+                         "ON c.id = d.class)f ON e.id = f.`subject`) h ON g.id = h.course").format(userId)
+                cursor_dbgroups.execute(query)
+                result_set = cursor_dbgroups.fetchall()
+                if not result_set:
+                    raise EmptyDbException("No courses found")
+                for row in result_set:
+                    course = row_to_course(row)
+                    courses_list.append(course)
+            connection_dbgroups.close()
+            return courses_list
+        except NotFoundException:
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            raise
+
+    @classmethod
+    def get_user_subjects(cls, userId: int) -> list[Course]:
+        try:
+            connection_dbgroups = get_connection('dbgroups')
+            subjects_list = []
+            with connection_dbgroups.cursor() as cursor_dbgroups:
+                query = ("SELECT DISTINCT e.* FROM dbcourses.subjects e "
+                         "INNER JOIN(SELECT `subject` FROM dbcourses.classes c "
+                         "INNER JOIN(SELECT class FROM relationusersgroups a "
+                         "INNER JOIN `groups` b ON a.group = b.id WHERE USER = '{}') d "
+                         "ON c.id = d.class)f ON e.id = f.`subject`").format(userId)
+                cursor_dbgroups.execute(query)
+                result_set = cursor_dbgroups.fetchall()
+                if not result_set:
+                    raise EmptyDbException("No subjects found")
+                for row in result_set:
+                    subject = row_to_subject(row)
+                    subjects_list.append(subject)
+            connection_dbgroups.close()
+            return subjects_list
+        except NotFoundException:
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            raise
+
+    @classmethod
+    def get_user_classes(cls, userId: int) -> list[ClassModel]:
+        try:
+            connection_dbgroups = get_connection('dbgroups')
+            classes_list = []
+            with connection_dbgroups.cursor() as cursor_dbgroups:
+                query = ("SELECT DISTINCT c.* FROM dbcourses.classes c "
+                         "INNER JOIN(SELECT class FROM relationusersgroups a "
+                         "INNER JOIN `groups` b ON a.group = b.id WHERE USER = '{}') d "
+                         "ON c.id = d.class").format(userId)
+                cursor_dbgroups.execute(query)
+                result_set = cursor_dbgroups.fetchall()
+                if not result_set:
+                    raise EmptyDbException("No classes found")
+                for row in result_set:
+                    class_item = row_to_subject(row)
+                    classes_list.append(class_item)
+            connection_dbgroups.close()
+            return classes_list
+        except NotFoundException:
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            raise
+
+    @classmethod
     def get_user_groups(cls, userId: int) -> list[Group]:
         try:
             connection_dbgroups = get_connection('dbgroups')
@@ -134,6 +219,32 @@ class UserService:
                     groups_list.append(group)
             connection_dbgroups.close()
             return groups_list
+        except NotFoundException:
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            raise
+
+    @classmethod
+    def get_user_topics(cls, userId: int) -> list[Topic]:
+        try:
+            connection_dbgroups = get_connection('dbgroups')
+            topics_list = []
+            with connection_dbgroups.cursor() as cursor_dbgroups:
+                query = ("SELECT c.* FROM topics c "
+                         "INNER JOIN(SELECT `group` FROM relationusersgroups a "
+                         "INNER JOIN `groups` b ON a.group = b.id WHERE USER = '{}') d "
+                         "ON c.id = d.`group`").format(userId)
+                cursor_dbgroups.execute(query)
+                result_set = cursor_dbgroups.fetchall()
+                if not result_set:
+                    raise EmptyDbException("No groups found")
+                for row in result_set:
+                    topic = row_to_topic(row)
+                    topics_list.append(topic)
+            connection_dbgroups.close()
+            return topics_list
         except NotFoundException:
             raise
         except Exception as ex:
@@ -166,7 +277,6 @@ class UserService:
             Logger.add_to_log("error", str(ex))
             Logger.add_to_log("error", traceback.format_exc())
             raise
-
 
     @classmethod
     def get_user_by_username(cls, username: str) -> User:
