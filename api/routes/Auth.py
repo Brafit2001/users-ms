@@ -12,6 +12,7 @@ auth = Blueprint('auth_blueprint', __name__)
 @auth.route('/', methods=['POST'])
 def login():
     try:
+
         # Recoger datos
         username = request.json['username']
         password = request.json['password']

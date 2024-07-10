@@ -8,6 +8,7 @@ from werkzeug.security import generate_password_hash
 
 from api.database.db import get_connection
 from api.models import ClassModel
+from api.models.ClassModel import row_to_class_model
 from api.models.CourseModel import row_to_course, Course
 from api.models.GroupModel import row_to_group, Group
 from api.models.PermissionModel import row_to_permission
@@ -191,7 +192,7 @@ class UserService:
                 if not result_set:
                     raise EmptyDbException("No classes found")
                 for row in result_set:
-                    class_item = row_to_subject(row)
+                    class_item = row_to_class_model(row)
                     classes_list.append(class_item)
             connection_dbgroups.close()
             return classes_list
@@ -232,10 +233,40 @@ class UserService:
             connection_dbgroups = get_connection('dbgroups')
             topics_list = []
             with connection_dbgroups.cursor() as cursor_dbgroups:
-                query = ("SELECT c.* FROM topics c "
+                query = ("SELECT e.* FROM topics e LEFT JOIN "
+                         "(SELECT topic FROM relationtopicsgroups c "
                          "INNER JOIN(SELECT `group` FROM relationusersgroups a "
                          "INNER JOIN `groups` b ON a.group = b.id WHERE USER = '{}') d "
-                         "ON c.id = d.`group`").format(userId)
+                         "ON c.`group` = d.`group`) ee ON e.id = ee.topic "
+                         "WHERE ee.`topic`is not null").format(userId)
+                cursor_dbgroups.execute(query)
+                result_set = cursor_dbgroups.fetchall()
+                if not result_set:
+                    raise EmptyDbException("No groups found")
+                for row in result_set:
+                    topic = row_to_topic(row)
+                    topics_list.append(topic)
+            connection_dbgroups.close()
+            return topics_list
+        except NotFoundException:
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            raise
+
+    @classmethod
+    def get_user_remaining_topics(cls, userId: int) -> list[Topic]:
+        try:
+            connection_dbgroups = get_connection('dbgroups')
+            topics_list = []
+            with connection_dbgroups.cursor() as cursor_dbgroups:
+                query = ("SELECT e.* FROM topics e LEFT JOIN "
+                         "(SELECT topic FROM relationtopicsgroups c "
+                         "INNER JOIN(SELECT `group` FROM relationusersgroups a "
+                         "INNER JOIN `groups` b ON a.group = b.id WHERE USER = '{}') d "
+                         "ON c.`group` = d.`group`) ee ON e.id = ee.topic "
+                         "WHERE ee.`topic`is null").format(userId)
                 cursor_dbgroups.execute(query)
                 result_set = cursor_dbgroups.fetchall()
                 if not result_set:
@@ -309,7 +340,7 @@ class UserService:
             user.password = password
             with (connection_dbusers.cursor()) as cursor_dbusers:
                 query = ("insert into users set username = '{}',password = '{}', name = '{}' ,surname = '{}', "
-                         "email = '{}', image = '{}'").format(
+                         "email = '{}', image = '{}' returning id").format(
                     user.username,
                     generate_password_hash(user.password),
                     user.name,
@@ -318,12 +349,9 @@ class UserService:
                     user.image
                 )
                 cursor_dbusers.execute(query)
+                row = cursor_dbusers.fetchone()
+                user.id = row[0]
                 connection_dbusers.commit()
-                # Obtenemos la id creada por la bbdd para devolverla
-                query = "select * from users where username = '{}'".format(user.username)
-                cursor_dbusers.execute(query)
-                user.id = cursor_dbusers.fetchone()[0]
-
             connection_dbusers.close()
             return user
         except mariadb.IntegrityError:

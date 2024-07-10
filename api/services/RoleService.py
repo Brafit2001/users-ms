@@ -58,6 +58,28 @@ class RoleService:
             Logger.add_to_log("error", traceback.format_exc())
 
     @classmethod
+    def get_role_by_name(cls, name: str) -> Role:
+        try:
+            connection_dbusers = get_connection('dbusers')
+            role = None
+            with connection_dbusers.cursor() as cursor_dbusers:
+                query = "select * from roles where name = '{}'".format(name)
+                cursor_dbusers.execute(query)
+                row = cursor_dbusers.fetchone()
+                if row is not None:
+                    role = row_to_role(row)
+                else:
+                    raise NotFoundException("Role not found")
+            connection_dbusers.close()
+            return role
+        except NotFoundException:
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+
+
+    @classmethod
     def add_role(cls, role: Role):
         try:
             connection_dbusers = get_connection('dbusers')

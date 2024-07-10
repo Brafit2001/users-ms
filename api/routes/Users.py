@@ -14,6 +14,7 @@ from werkzeug.security import check_password_hash
 from api.models.PermissionModel import PermissionName, PermissionType
 from api.models.UserModel import User, row_to_user
 from api.services.AuthService import AuthService
+from api.services.RoleService import RoleService
 from api.services.UserService import UserService
 from api.utils.AppExceptions import EmptyDbException, NotFoundException, BadCsvFormatException, EmailSendException, \
     PasswordCoincidenceException
@@ -66,7 +67,6 @@ def get_all_users(*args):
 @Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.WRITE)])
 def add_user(*args):
     try:
-
         username = request.json["username"]
         name = request.json["name"]
         surname = request.json["surname"]
@@ -309,6 +309,34 @@ def get_user_topics(*args, **kwargs):
         Logger.add_to_log("error", traceback.format_exc())
         response = jsonify({'message': str(ex), 'success': False})
         return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@users.route('/<user_id>/remaining-topics', methods=['GET'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.USERS_MANAGER, PermissionType.READ)])
+def get_user_remaining_topics(*args, **kwargs):
+    try:
+        user_id = int(kwargs["user_id"])
+        topics_list = UserService.get_user_remaining_topics(user_id)
+        response_topics = []
+        for topic in topics_list:
+            response_topics.append(topic.to_json())
+        response = jsonify({'success': True, 'data': response_topics})
+        return response, HTTPStatus.OK
+    except EmptyDbException as ex:
+        response = jsonify({'success': False, 'message': ex.message})
+        return response, ex.error_code
+    except NotFoundException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except ValueError:
+        return jsonify({'message': "User id must be an integer", 'success': False})
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
 
 
 @users.route('/<user_id>/groups-remaining', methods=['GET'])
@@ -584,7 +612,7 @@ def import_users_csv(*args):
                 # Dejamos la posición de la contraseña y la imagen en vacío
                 row_info.insert(0, "")
                 row_info.insert(2, "")  # CONTRASEÑA
-                row_info.insert(6, "")  # IMAGEN
+                row_info.insert(6, random.choice(PROFILE_IMAGES))  # IMAGEN
                 group_name = row_info[7]
                 class_name = row_info[8]
                 subject = row_info[9]
@@ -604,16 +632,22 @@ def import_users_csv(*args):
                         raise EmailSendException("Email could not be send")
                     # Asignamos el usuario al grupo
                     UserService.assign_group(userId=user_id, groupId=group_id)
+                    # Asignamos el rol
+                    role = RoleService.get_role_by_name(name="Student")
+                    RoleService.assign_role(userId=user_id, roleId=role.id)
+
                     created.append(_user.username)
 
                 except EmailSendException as ex:
                     response = jsonify({'message': ex.message, 'success': False})
                     return response, ex.error_code
-                except KeyError:
+                except KeyError as ex:
                     response = {'user': _user.username, 'reason': 'Bad format'}
+                    Logger.add_to_log("error", str(ex))
                     failed.append(response)
-                except mariadb.IntegrityError:
+                except mariadb.IntegrityError as ex:
                     response = {'user': _user.username, 'reason': 'User already exists'}
+                    Logger.add_to_log("error", str(ex))
                     failed.append(response)
                 except Exception as ex:
                     Logger.add_to_log("error", str(ex))

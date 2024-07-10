@@ -23,6 +23,7 @@ class AuthService:
                     user.username)
                 cursor_dbusers.execute(query)
                 row = cursor_dbusers.fetchone()
+                Logger.add_to_log("info" ,row )
                 check_password = check_password_hash(pwhash=row[2], password=user.password)
                 if check_password is False:
                     return authenticated_user
